@@ -420,8 +420,8 @@
   }
 
   function renderMatchCard(queryName, queryStrength, queryForm, voiceSummary) {
-    const qTokens = queryName.toLowerCase().split(/\s+/).filter(Boolean);
-    const matches = inventory.filter(it => {
+        const qTokens = queryName.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(Boolean);
+const matches = inventory.filter(it => {
       const hay = (it.name + " " + it.strengthDisplay).toLowerCase();
       const nameOk = qTokens.every(tok => hay.includes(tok));
       const strOk  = !queryStrength || it.strength.includes(queryStrength.toLowerCase());
