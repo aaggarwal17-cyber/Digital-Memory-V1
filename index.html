@@ -53,8 +53,49 @@
       <span id="dbCount" style="font-size:13px; color:#38bdf8; font-weight:bold;">Inventory: 0 Items</span>
     </div>
   </div>
-
   <!-- STEP 1: ZERO-ENTRY ERP CSV UPLOADER -->
+  <div class="card">
+    <h2>1. Store ERP Inventory Sync (Zero Data Entry — Auto Column Mapper)</h2>
+    <div class="row" style="flex-wrap: wrap;">
+      <input type="file" id="csvFile" accept=".csv" style="max-width: 260px; color:#cbd5e1;" />
+      <button class="btn-primary" onclick="loadSampleCSV()">⚡ Load Sample Pharmacy CSV</button>
+      <button class="btn-warn" onclick="downloadSampleCSV()">📥 Download Sample CSV</button>
+      <span id="csvStatus" style="color:#34d399; font-size:13px;"></span>
+    </div>
+
+    <div style="background:#0f172a; border:1px dashed #475569; border-radius:8px; padding:10px; margin-top:8px; font-size:12px;">
+      <div style="color:#94a3b8; margin-bottom:6px;">
+        <b style="color:#38bdf8;">Supported ERP Columns (Any Order):</b>
+        <span class="tag tag-h">Item Name*</span>
+        <span class="tag tag-h">Qty*</span>
+        <span class="tag" style="background:#334155;">Composition (Salt)</span>
+        <span class="tag" style="background:#334155;">Strength</span>
+        <span class="tag" style="background:#334155;">Supplier</span>
+        <span class="tag" style="background:#334155;">Manufacturer</span>
+        <span class="tag" style="background:#334155;">Batch#</span>
+        <span class="tag" style="background:#334155;">Expiry Date</span>
+        <span class="tag tag-h1">Rack | Shelf | Box (ZiGo)</span>
+      </div>
+      <div style="overflow-x:auto;">
+        <table style="font-size:11px; color:#cbd5e1;">
+          <thead>
+            <tr>
+              <th>SN</th><th>Item Name</th><th>Composition</th><th>Strength</th><th>Qty</th><th>Batch#</th><th>Expiry</th><th>Rack</th><th>Shelf</th><th>Box</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td><td>Dolo 650 Tablet</td><td>Paracetamol</td><td>650mg</td><td>45</td><td>DL902</td><td>2027-08</td><td>Rack A</td><td>Shelf 2</td><td>Box 4</td>
+            </tr>
+            <tr>
+              <td>2</td><td>Augmentin 625 Tab</td><td>Amoxicillin + Clavulanic Acid</td><td>625mg</td><td>0</td><td>AG881</td><td>2027-04</td><td>Rack B</td><td>Shelf 1</td><td>Box 1</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+<!-- <!-- STEP 1: ZERO-ENTRY ERP CSV UPLOADER -->
   <div class="card">
     <h2>1. Store ERP Inventory Sync (Zero Data Entry — Auto Column Mapper)</h2>
     <div class="row" style="flex-wrap: wrap;">
@@ -62,7 +103,7 @@
       <button class="btn-primary" onclick="loadSampleCSV()">⚡ Load Sample Pharmacy CSV (Demo Data)</button>
       <span id="csvStatus" style="color:#34d399; font-size:13px;"></span>
     </div>
-  </div>
+  </div> -->
   <div class="grid">
     <!-- LEFT: PRESCRIPTION SCAN + 4-EYES MAKER-CHECKER GATE -->
     <div class="card">
@@ -475,6 +516,15 @@
       <td>${action}</td>
     `;
     tbody.prepend(tr);
+  }
+  function downloadSampleCSV() {
+    const blob = new Blob([SAMPLE_CSV_TEXT], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'ZiGo_Store_Memory_Sample.csv';
+    a.click();
+    URL.revokeObjectURL(url);
   }
 </script>
 </body>
