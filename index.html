@@ -267,6 +267,7 @@
 
     document.getElementById('dbCount').innerText = `Inventory: ${inventory.length} Items`;
     document.getElementById('csvStatus').innerText = `✓ Loaded "${fileName}" (${inventory.length} items auto-mapped)`;
+    localStorage.setItem('zigo_saved_csv', JSON.stringify({ text, fileName }));
   }
 
   function detectForm(text) {
@@ -525,6 +526,10 @@ const matches = inventory.filter(it => {
     a.click();
     URL.revokeObjectURL(url);
   }
+  window.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('zigo_saved_csv');
+  if (saved) { const d = JSON.parse(saved); parseCSV(d.text, d.fileName); }
+});
 </script>
 </body>
 </html>
