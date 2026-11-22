@@ -53,13 +53,12 @@
       <span id="dbCount" style="font-size:13px; color:#38bdf8; font-weight:bold;">Inventory: 0 Items</span>
     </div>
   </div>
-  <!-- SECTION 1A: INSTANT DEMO DATA & COLUMN FORMAT -->
+    <!-- SECTION 1A: SAMPLE ERP FORMAT & DOWNLOAD TEMPLATE -->
   <div class="card">
-    <h2>1A. Demo Data & Supported ERP Format (Quick Test)</h2>
+    <h2>1A. Supported ERP Format & Sample Template</h2>
     <div class="row" style="flex-wrap: wrap;">
-      <button class="btn-primary" onclick="loadSampleCSV()">⚡ Load Sample Pharmacy CSV (Demo Data)</button>
       <button class="btn-warn" onclick="downloadSampleCSV()">📥 Download Sample CSV Template</button>
-      <span id="csvStatus" style="color:#34d399; font-size:13px;"></span>
+      <span style="color:#94a3b8; font-size:13px;">Reference structure for your existing billing/ERP export.</span>
     </div>
 
     <div style="background:#0f172a; border:1px dashed #475569; border-radius:8px; padding:10px; margin-top:8px; font-size:12px;">
@@ -95,12 +94,13 @@
     </div>
   </div>
 
-  <!-- SECTION 1B: REAL STORE ERP CSV UPLOAD -->
+  <!-- SECTION 1B: STORE ERP INVENTORY UPLOAD -->
   <div class="card">
     <h2>1B. Store ERP Inventory Sync (Zero Data Entry — Auto Column Mapper)</h2>
     <div class="row" style="flex-wrap: wrap;">
-      <input type="file" id="csvFile" accept=".csv" style="max-width: 300px; color:#cbd5e1;" />
-      <span style="color:#94a3b8; font-size:13px;">Upload your shop's exported CSV file (columns auto-detect in any order).</span>
+      <input type="file" id="csvFile" accept=".csv" style="max-width: 280px; color:#cbd5e1;" />
+      <button class="btn-primary" onclick="loadSampleCSV()">⚡ Load Demo Data</button>
+      <span id="csvStatus" style="color:#34d399; font-size:13px;"></span>
     </div>
   </div>
 <div class="grid">
