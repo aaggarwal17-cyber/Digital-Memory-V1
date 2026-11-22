@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZiGo Digital Memory V1 — Store Location & 4-Eyes Safety Engine</title>
+  <style>
+    * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+    body { margin: 0; background: #0f172a; color: #f8fafc; padding: 16px; }
+    .container { max-width: 1100px; margin: auto; }
+    .header { display: flex; justify-content: space-between; align-items: center; background: #1e293b; padding: 14px 20px; border-radius: 12px; border: 1px solid #334155; margin-bottom: 16px; }
+    .header h1 { margin: 0; font-size: 20px; color: #38bdf8; }
+    .badge { background: #0284c7; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media(max-width: 800px) { .grid { grid-template-columns: 1fr; } }
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+    .card h2 { margin-top: 0; font-size: 16px; color: #e2e8f0; border-bottom: 1px solid #334155; padding-bottom: 8px; }
+    button { cursor: pointer; border: none; border-radius: 8px; padding: 10px 14px; font-weight: 600; font-size: 13px; transition: 0.2s; }
+    .btn-primary { background: #0284c7; color: white; }
+    .btn-primary:hover { background: #0369a1; }
+    .btn-success { background: #16a34a; color: white; }
+    .btn-success:disabled { background: #475569; cursor: not-allowed; opacity: 0.6; }
+    .btn-warn { background: #d97706; color: white; }
+    .btn-voice { background: #7c3aed; color: white; }
+    input[type="text"], input[type="date"] { background: #0f172a; border: 1px solid #475569; color: white; padding: 9px 12px; border-radius: 8px; width: 100%; font-size: 14px; }
+    .row { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+    .pill-group { display: inline-flex; gap: 4px; background: #0f172a; padding: 3px; border-radius: 6px; border: 1px solid #334155; }
+    .pill { padding: 4px 8px; font-size: 11px; border-radius: 4px; background: transparent; color: #94a3b8; }
+    .pill.active { background: #0284c7; color: white; }
+    .rx-item { background: #0f172a; border: 1px solid #334155; padding: 10px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+    .rx-item.banned { border-color: #ef4444; background: #450a0a; }
+    .alert-red { background: #7f1d1d; border: 1px solid #ef4444; color: #fecaca; padding: 12px; border-radius: 8px; margin-bottom: 12px; font-weight: 600; }
+    .res-green { background: #064e3b; border: 1px solid #10b981; padding: 14px; border-radius: 10px; margin-bottom: 10px; }
+    .res-fyi { background: #451a03; border: 1px solid #f59e0b; padding: 14px; border-radius: 10px; margin-bottom: 10px; }
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-left: 6px; }
+    .tag-h1 { background: #ea580c; color: white; }
+    .tag-x { background: #dc2626; color: white; }
+    .tag-h { background: #2563eb; color: white; }
+    .loc-box { font-size: 18px; font-weight: bold; color: #34d399; margin: 6px 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th, td { border-bottom: 1px solid #334155; padding: 8px; text-align: left; }
+    th { color: #94a3b8; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div>
+      <h1>ZiGo Digital Memory V1 <span class="badge">LIVE DEMO ENGINE</span></h1>
+      <small style="color:#94a3b8;">Zero-Entry ERP CSV • 4-Eyes Maker-Checker Gate • Exact Name+Strength+Form Locator</small>
+    </div>
+    <div>
+      <span id="dbCount" style="font-size:13px; color:#38bdf8; font-weight:bold;">Inventory: 0 Items</span>
+    </div>
+  </div>
+
+  <!-- STEP 1: ZERO-ENTRY ERP CSV UPLOADER -->
+  <div class="card">
+    <h2>1. Store ERP Inventory Sync (Zero Data Entry — Auto Column Mapper)</h2>
+    <div class="row" style="flex-wrap: wrap;">
+      <input type="file" id="csvFile" accept=".csv" style="max-width: 280px; color:#cbd5e1;" />
+      <button class="btn-primary" onclick="loadSampleCSV()">⚡ Load Sample Pharmacy CSV (Demo Data)</button>
+      <span id="csvStatus" style="color:#34d399; font-size:13px;"></span>
+    </div>
+  </div>
+  <div class="grid">
+    <!-- LEFT: PRESCRIPTION SCAN + 4-EYES MAKER-CHECKER GATE -->
+    <div class="card">
+      <h2>2. Prescription Scan & 4-Eyes Safety Gate (Maker & Checker)</h2>
+      <div class="row">
+        <input type="file" id="rxImage" accept="image/*" onchange="simulateRxScan()" />
+        <button class="btn-warn" onclick="simulateRxScan(true)">📄 Demo Rx Scan (With Banned Drug Test)</button>
+      </div>
+
+      <div id="rxVerificationPanel" style="display:none; margin-top:12px;">
+        <div class="row">
+          <div style="flex:1;">
+            <label style="font-size:11px; color:#94a3b8;">Rx Validity Date (Mandatory)</label>
+            <input type="date" id="rxDate" onchange="validateGate()" />
+          </div>
+          <div style="flex:1;">
+            <label style="font-size:11px; color:#94a3b8;">Doctor Reg# / Stamp ID (Mandatory)</label>
+            <input type="text" id="drRegNo" placeholder="e.g. PMC-48291" oninput="validateGate()" />
+          </div>
+        </div>
+
+        <div style="margin: 8px 0;">
+          <label style="font-size:12px; color:#fbbf24; cursor:pointer;">
+            <input type="checkbox" id="stampChecked" onchange="validateGate()" />
+            <b>4-Eyes Check:</b> I physically verified Doctor Stamp, Reg# & Date on original slip.
+          </label>
+        </div>
+
+        <div id="bannedAlertBox" class="alert-red" style="display:none;"></div>
+        <div id="rxItemsList"></div>
+
+        <button id="confirmLocateBtn" class="btn-success" style="width:100%; margin-top:8px;" disabled onclick="executeConfirmedSearch()">
+          🔒 Complete 4-Eyes Check to Unlock Rack Search
+        </button>
+      </div>
+    </div>
+
+    <!-- RIGHT: DIRECT SEARCH + RACK LOCATOR + ONLY FYI -->
+    <div class="card">
+      <h2>3. Instant Rack Locator ("Where" Engine + Only FYI)</h2>
+      <div class="row">
+        <input type="text" id="directSearchInput" placeholder="Search Name + Strength (e.g. Dolo 650, Azithral 500)..." onkeyup="if(event.key==='Enter') runDirectSearch()" />
+        <button class="btn-voice" onclick="startVoiceSearch()">🎤 Speak</button>
+        <button class="btn-primary" onclick="runDirectSearch()">Locate</button>
+      </div>
+      <div class="row" style="font-size:12px; color:#94a3b8;">
+        <span>Filter Form:</span>
+        <div class="pill-group" id="directFormFilter">
+          <button class="pill active" onclick="setDirectForm('ALL', this)">ALL</button>
+          <button class="pill" onclick="setDirectForm('TAB', this)">TAB</button>
+          <button class="pill" onclick="setDirectForm('CAP', this)">CAP</button>
+          <button class="pill" onclick="setDirectForm('SYP', this)">SYP</button>
+          <button class="pill" onclick="setDirectForm('INJ', this)">INJ</button>
+        </div>
+      </div>
+
+      <div id="searchResultsArea" style="margin-top:12px;">
+        <div style="color:#64748b; font-size:13px; text-align:center; padding:30px 10px;">
+          Upload CSV or click "Load Sample CSV", then scan Rx or search a medicine to locate exact Rack, Shelf & Box.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM: CENTRALIZED CONVEX AUDIT TRAIL -->
+  <div class="card">
+    <h2>4. Centralized Audit Trail (Convex DB Immutable Log Preview)</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Trigger Source</th>
+          <th>Dr. Reg# / Validity</th>
+          <th>Items / Query</th>
+          <th>4-Eyes Safety Status</th>
+          <th>Action Taken</th>
+        </tr>
+      </thead>
+      <tbody id="auditTableBody"></tbody>
+    </table>
+  </div>
+</div>
+<script>
+  // CDSCO Banned Salts / FDC List (Sample Core Rules)
+  const BANNED_SALTS = [
+    "nimesulide + paracetamol",
+    "aceclofenac + paracetamol + rabeprazole",
+    "fixed dose combination",
+    "sibutramine",
+    "phenylpropanolamine"
+  ];
+
+  // Schedule H1 / X Reference Salts
+  const SCHEDULE_H1 = ["cefixime", "azithromycin", "levofloxacin", "alprazolam", "tramadol"];
+  const SCHEDULE_X  = ["ketamine", "methylphenidate", "morphine"];
+
+  let inventory = [];
+  let scannedItems = [];
+  let directForm = "ALL";
+
+  // 1. Sample ERP CSV Data
+  const SAMPLE_CSV_TEXT = `SN,Item Name,Composition,Strength,Supplier,Manufacturer,Qty,Batch#,Expiry Date,Rack,Shelf,Box
+1,Dolo 650 Tablet,Paracetamol,650mg,MedPlus Dist,Micro Labs,45,DL902,2027-08,Rack A,Shelf 2,Box 4
+2,Calpol 650 Tablet,Paracetamol,650mg,Apex Pharma,GSK,30,CP112,2027-11,Rack A,Shelf 2,Box 5
+3,Calpol 250 Syrup,Paracetamol,250mg/5ml,Apex Pharma,GSK,18,CS440,2027-05,Rack C,Shelf 1,Box 2
+4,Augmentin 625 Duo Tablet,Amoxicillin + Clavulanic Acid,625mg,City Distributors,GSK,0,AG881,2027-04,Rack B,Shelf 1,Box 1
+5,Moxikind CV 625 Tablet,Amoxicillin + Clavulanic Acid,625mg,Mankind Dist,Mankind,22,MK309,2027-09,Rack B,Shelf 1,Box 3
+6,Azithral 500 Tablet,Azithromycin,500mg,Alembic Agency,Alembic,14,AZ774,2027-06,Rack D,Shelf 3,Box 2
+7,Azithral Liquid 200 Syrup,Azithromycin,200mg/5ml,Alembic Agency,Alembic,9,AZL19,2027-03,Rack C,Shelf 2,Box 1
+8,Pan-D Capsule,Pantoprazole + Domperidone,40mg,Alkem Dist,Alkem,60,PD501,2028-01,Rack A,Shelf 4,Box 1
+9,Sumo Tablet,Nimesulide + Paracetamol,100mg+325mg,Alkem Dist,Alkem,10,SM999,2026-12,Rack E,Shelf 1,Box 9`;
+
+  document.getElementById('csvFile').addEventListener('change', function(e) {
+    const file = e.target.files.item(0);
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => parseCSV(evt.target.result, file.name);
+    reader.readAsText(file);
+  });
+
+  function loadSampleCSV() {
+    parseCSV(SAMPLE_CSV_TEXT, "Sample_Chemist_ERP.csv");
+  }
+
+  // Smart Auto-Column Mapper
+  function parseCSV(text, fileName) {
+    const lines = text.trim().split(/\r?\n/);
+    const headerRow = lines.shift() || "";
+    const headers = headerRow.split(',').map(h => h.trim().toLowerCase());
+
+    const findCol = (keywords) => headers.findIndex(h => keywords.some(k => h.includes(k)));
+    const idxName = findCol(['item', 'product', 'medicine', 'name']);
+    const idxSalt = findCol(['comp', 'salt', 'generic']);
+    const idxStr  = findCol(['str', 'power', 'mg']);
+    const idxQty  = findCol(['qty', 'stock', 'bal']);
+    const idxExp  = findCol(['exp']);
+    const idxRack = findCol(['rack']);
+    const idxShlf = findCol(['shelf']);
+    const idxBox  = findCol(['box']);
+
+    inventory = [];
+    lines.forEach(line => {
+      if (!line.trim()) return;
+      const cols = line.split(',').map(c => c.trim());
+      const rawName = idxName >= 0 ? (cols.at(idxName) || "") : "";
+      const rawStr  = idxStr >= 0 ? (cols.at(idxStr) || "") : "";
+      const form = detectForm(rawName + " " + rawStr);
+      inventory.push({
+        name: rawName,
+        salt: (idxSalt >= 0 ? (cols.at(idxSalt) || "") : "").toLowerCase(),
+        saltDisplay: idxSalt >= 0 ? (cols.at(idxSalt) || "N/A") : "N/A",
+        strength: rawStr.toLowerCase(),
+        strengthDisplay: rawStr,
+        form: form,
+        qty: parseInt(idxQty >= 0 ? (cols.at(idxQty) || "0") : "0", 10),
+        expiry: idxExp >= 0 ? (cols.at(idxExp) || "N/A") : "N/A",
+        rack: idxRack >= 0 ? (cols.at(idxRack) || "Unassigned") : "Unassigned",
+        shelf: idxShlf >= 0 ? (cols.at(idxShlf) || "-") : "-",
+        box: idxBox >= 0 ? (cols.at(idxBox) || "-") : "-"
+      });
+    });
+
+    document.getElementById('dbCount').innerText = `Inventory: ${inventory.length} Items`;
+    document.getElementById('csvStatus').innerText = `✓ Loaded "${fileName}" (${inventory.length} items auto-mapped)`;
+  }
+
+  function detectForm(text) {
+    const t = text.toLowerCase();
+    if (t.includes('syp') || t.includes('syrup') || t.includes('liquid') || t.includes('ml')) return 'SYP';
+    if (t.includes('inj') || t.includes('injection') || t.includes('vial')) return 'INJ';
+    if (t.includes('cap') || t.includes('capsule')) return 'CAP';
+    return 'TAB';
+  }
+
+  function getScheduleTag(salt) {
+    if (SCHEDULE_X.some(s => salt.includes(s))) return '<span class="tag tag-x">SCHEDULE X (Duplicate Rx + Lockbox)</span>';
+    if (SCHEDULE_H1.some(s => salt.includes(s))) return '<span class="tag tag-h1">SCHEDULE H1 (3-Yr Register Mandatory)</span>';
+    return '<span class="tag tag-h">SCHEDULE H</span>';
+  }
+
+  function isBannedSalt(saltOrName) {
+    const q = saltOrName.toLowerCase();
+    return BANNED_SALTS.some(b => q.includes(b));
+  }
+  // 2. Prescription Scan & 4-Eyes Safety Gate
+  function simulateRxScan(includeBanned = false) {
+    if (inventory.length === 0) loadSampleCSV();
+    document.getElementById('rxVerificationPanel').style.display = 'block';
+    document.getElementById('rxDate').value = new Date().toISOString().slice(0, 10);
+    document.getElementById('drRegNo').value = "PMC-48291";
+    document.getElementById('stampChecked').checked = false;
+
+    scannedItems = [
+      { name: "Augmentin 625", strength: "625mg", form: "TAB", confirmed: false, banned: false },
+      { name: "Azithral 500", strength: "500mg", form: "TAB", confirmed: false, banned: false },
+      { name: "Calpol 250", strength: "250mg/5ml", form: "SYP", confirmed: false, banned: false }
+    ];
+
+    if (includeBanned) {
+      scannedItems.push({
+        name: "Sumo (Nimesulide + Paracetamol)",
+        strength: "100mg+325mg",
+        form: "TAB",
+        confirmed: false,
+        banned: true
+      });
+    }
+    renderRxItems();
+    validateGate();
+  }
+
+  function renderRxItems() {
+    const list = document.getElementById('rxItemsList');
+    list.innerHTML = "";
+    scannedItems.forEach((item, idx) => {
+      const div = document.createElement('div');
+      div.className = "rx-item" + (item.banned ? " banned" : "");
+      div.innerHTML = `
+        <div>
+          <input type="checkbox" ${item.confirmed ? "checked" : ""} ${item.banned ? "disabled" : ""} onchange="toggleItemConfirm(${idx}, this.checked)" />
+          <b>${item.name}</b> <small style="color:#94a3b8;">(${item.strength})</small>
+          ${item.banned ? '<span class="tag tag-x">⛔ CDSCO BANNED FDC</span>' : ''}
+        </div>
+        <div class="pill-group">
+          ${['TAB','CAP','SYP','INJ'].map(f => `
+            <button class="pill ${item.form===f ? 'active' : ''}" onclick="setItemForm(${idx}, '${f}')">${f}</button>
+          `).join('')}
+        </div>
+      `;
+      list.appendChild(div);
+    });
+  }
+
+  function toggleItemConfirm(idx, val) {
+    scannedItems.at(idx).confirmed = val;
+    validateGate();
+  }
+
+  function setItemForm(idx, form) {
+    scannedItems.at(idx).form = form;
+    renderRxItems();
+  }
+
+  function validateGate() {
+    const dateVal = document.getElementById('rxDate').value;
+    const regVal  = document.getElementById('drRegNo').value.trim();
+    const stampOk = document.getElementById('stampChecked').checked;
+    const bannedItems = scannedItems.filter(i => i.banned);
+    const safeItems   = scannedItems.filter(i => !i.banned);
+    const allSafeConfirmed = safeItems.length > 0 && safeItems.every(i => i.confirmed);
+
+    const alertBox = document.getElementById('bannedAlertBox');
+    if (bannedItems.length > 0) {
+      alertBox.style.display = 'block';
+      alertBox.innerHTML = `⛔ CHECK & ACT ALERT: Prohibited/Banned Drug detected (${bannedItems.map(b=>b.name).join(', ')}). Search loop HALTED for banned item!`;
+      speakText("Alert. Banned drug combination detected. Check and act. Do not dispense.");
+      logAudit("RX_SCAN", `${regVal} | ${dateVal}`, bannedItems.map(b=>b.name).join(', '), "BLOCKED_BANNED_DRUG", "HALTED_CHECK_AND_ACT");
+    } else {
+      alertBox.style.display = 'none';
+    }
+
+    const btn = document.getElementById('confirmLocateBtn');
+    if (dateVal && regVal.length >= 4 && stampOk && allSafeConfirmed) {
+      btn.disabled = false;
+      btn.innerText = `✅ Confirm & Locate Racks (${safeItems.length} Verified Items)`;
+    } else {
+      btn.disabled = true;
+      btn.innerText = `🔒 Complete 4-Eyes Check (Date + Dr Reg# + Tick All Items)`;
+    }
+  }
+
+  function executeConfirmedSearch() {
+    const regVal  = document.getElementById('drRegNo').value.trim();
+    const dateVal = document.getElementById('rxDate').value;
+    const safeItems = scannedItems.filter(i => !i.banned);
+
+    const area = document.getElementById('searchResultsArea');
+    area.innerHTML = "";
+    let voiceSummary = [];
+
+    safeItems.forEach(req => {
+      const html = renderMatchCard(req.name, req.strength, req.form, voiceSummary);
+      area.innerHTML += html;
+    });
+
+    if (voiceSummary.length > 0) speakText(voiceSummary.join(". "));
+    logAudit("RX_SCAN_CONFIRMED", `${regVal} | ${dateVal}`, safeItems.map(i=>`${i.name} [${i.form}]`).join(', '), "4_EYES_VERIFIED", "RACK_LOCATED");
+  }
+  // 3. Direct Search (Name + Strength + Form) & Banned Guardrail
+  function setDirectForm(form, el) {
+    directForm = form;
+    document.querySelectorAll('#directFormFilter .pill').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    if (document.getElementById('directSearchInput').value.trim()) runDirectSearch();
+  }
+
+  function runDirectSearch() {
+    if (inventory.length === 0) loadSampleCSV();
+    const query = document.getElementById('directSearchInput').value.trim();
+    if (!query) return;
+
+    const area = document.getElementById('searchResultsArea');
+    const matchedInDb = inventory.find(it => it.name.toLowerCase().includes(query.toLowerCase()));
+    if (isBannedSalt(query) || (matchedInDb && isBannedSalt(matchedInDb.salt))) {
+      area.innerHTML = `<div class="alert-red">⛔ CHECK & ACT ALERT: "${query}" contains a CDSCO Banned Drug Combination. Rack location is BLOCKED!</div>`;
+      speakText("Alert. Banned drug detected. Do not sell.");
+      logAudit("DIRECT_SEARCH", "N/A (Direct Query)", query, "BLOCKED_BANNED_DRUG", "HALTED_CHECK_AND_ACT");
+      return;
+    }
+
+    let voiceSummary = [];
+    area.innerHTML = renderMatchCard(query, "", directForm === "ALL" ? "" : directForm, voiceSummary);
+    if (voiceSummary.length > 0) speakText(voiceSummary.join(". "));
+    logAudit("DIRECT_SEARCH", "Counter Query", `${query} [${directForm}]`, "SAFE_CHECK_PASSED", "RACK_LOCATED");
+  }
+
+  function renderMatchCard(queryName, queryStrength, queryForm, voiceSummary) {
+    const qTokens = queryName.toLowerCase().split(/\s+/).filter(Boolean);
+    const matches = inventory.filter(it => {
+      const hay = (it.name + " " + it.strengthDisplay).toLowerCase();
+      const nameOk = qTokens.every(tok => hay.includes(tok));
+      const strOk  = !queryStrength || it.strength.includes(queryStrength.toLowerCase());
+      const formOk = !queryForm || it.form === queryForm;
+      return nameOk && strOk && formOk;
+    });
+
+    if (matches.length === 0) {
+      return `<div class="res-fyi">⚠️ No exact match found for <b>${queryName} ${queryStrength} ${queryForm}</b> in store CSV.</div>`;
+    }
+
+    return matches.map(item => {
+      if (item.qty > 0) {
+        voiceSummary.push(`${item.name}, ${item.rack}, ${item.shelf}, ${item.box}`);
+        return `
+          <div class="res-green">
+            <div style="display:flex; justify-content:space-between;">
+              <b>✅ ${item.name} (${item.form})</b>
+              <span>Stock: <b>${item.qty}</b> | Exp: ${item.expiry}</span>
+            </div>
+            <div class="loc-box">📍 ${item.rack} ➔ ${item.shelf} ➔ ${item.box}</div>
+            <div style="font-size:12px; color:#a7f3d0;">
+              Salt: ${item.saltDisplay} (${item.strengthDisplay}) ${getScheduleTag(item.salt)}
+            </div>
+          </div>
+        `;
+      } else {
+        const alts = inventory.filter(alt =>
+          alt.qty > 0 &&
+          alt.salt === item.salt &&
+          alt.form === item.form &&
+          alt.name !== item.name
+        );
+        return `
+          <div class="res-fyi">
+            <div><b>❌ ${item.name} — OUT OF STOCK (Qty: 0)</b></div>
+            <div style="margin-top:8px; padding:8px; background:#78350f; border-radius:6px;">
+              <div style="font-size:12px; font-weight:bold; color:#fde68a;">
+                ℹ️ ONLY FYI — Same Composition (${item.saltDisplay} | ${item.form}) Available in Shop:
+              </div>
+              <div style="font-size:11px; color:#fcd34d; margin-bottom:6px;">
+                (ZiGo does not decide. Inform customer & let customer/chemist decide.)
+              </div>
+              ${alts.length > 0 ? alts.map(a => `
+                <div style="margin-top:4px; font-size:13px;">
+                  • <b>${a.name}</b> (Qty: ${a.qty}) ➔ <b style="color:#34d399;">${a.rack} | ${a.shelf} | ${a.box}</b>
+                </div>
+              `).join('') : '<div>No same-salt alternative in stock.</div>'}
+            </div>
+          </div>
+        `;
+      }
+    }).join('');
+  }
+
+  // Text-to-Voice Output
+  function speakText(msg) {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(msg);
+      u.rate = 1.0;
+      window.speechSynthesis.speak(u);
+    }
+  }
+
+  // Voice-to-Text Input
+  function startVoiceSearch() {
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRec) { alert("Voice recognition supported in Chrome/Edge."); return; }
+    const rec = new SpeechRec();
+    rec.lang = 'en-IN';
+    rec.onresult = (e) => {
+      const firstResult = e.results.item(0).item(0).transcript;
+      document.getElementById('directSearchInput').value = firstResult;
+      runDirectSearch();
+    };
+    rec.start();
+  }
+
+  // Centralized Immutable Audit Logger (Convex DB Ready)
+  function logAudit(trigger, meta, items, safety, action) {
+    const tbody = document.getElementById('auditTableBody');
+    const tr = document.createElement('tr');
+    const time = new Date().toLocaleTimeString();
+    tr.innerHTML = `
+      <td>${time}</td>
+      <td><b>${trigger}</b></td>
+      <td>${meta}</td>
+      <td>${items}</td>
+      <td style="color:${safety.includes('BLOCKED') ? '#f87171' : '#34d399'}; font-weight:bold;">${safety}</td>
+      <td>${action}</td>
+    `;
+    tbody.prepend(tr);
+  }
+</script>
+</body>
+</html>
