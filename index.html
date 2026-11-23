@@ -555,13 +555,30 @@ Vicks Action 500 Extra,Paracetamol + Phenylephrine + Caffeine,CDSCO-FDC`;
     const safeItems = scannedItems.filter(i => !i.banned);
     const area = document.getElementById('searchResultsArea');
     area.innerHTML = "";
-    let voiceSummary = [];
-
-    safeItems.forEach(req => {
-      area.innerHTML += renderMatchCard(req.name, req.strength, req.form, voiceSummary);
-    });
+        let voiceSummary = [];
+    const resultHtml = renderMatchCard(query, "", directForm === "ALL" ? "" : directForm, voiceSummary);
+    area.innerHTML = resultHtml;
+    const isFound = !resultHtml.includes("No exact match found");
     if (voiceSummary.length > 0) speakText(voiceSummary.join(". "));
-    logAudit("RX_SCAN_CONFIRMED", `${regVal} | ${dateVal}`, safeItems.map(i=>`${i.name} [${i.form}]`).join(', '), "4_EYES_VERIFIED", "RACK_LOCATED");
+    logAudit(
+      "DIRECT_SEARCH",
+      "Counter Query",
+      `${query} [${directForm}]`,
+      isFound ? "ITEM_FOUND_OK" : "NOT_IN_STORE_CSV",
+      isFound ? "RACK_LOCATED" : "NOT_AVAILABLE"
+    );
+
+    
+    
+    
+    
+    // let voiceSummary = [];
+
+    // safeItems.forEach(req => {
+    //   area.innerHTML += renderMatchCard(req.name, req.strength, req.form, voiceSummary);
+    // });
+    // if (voiceSummary.length > 0) speakText(voiceSummary.join(". "));
+    // logAudit("RX_SCAN_CONFIRMED", `${regVal} | ${dateVal}`, safeItems.map(i=>`${i.name} [${i.form}]`).join(', '), "4_EYES_VERIFIED", "RACK_LOCATED");
   }
 
   function checkExpiryStatus(expStr) {
