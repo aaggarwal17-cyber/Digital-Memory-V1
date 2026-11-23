@@ -3,116 +3,133 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ZiGo Digital Memory V1 — Store Location & 4-Eyes Safety Engine</title>
+  <title>ZiGo ShelfSense V1 — Universal Store Digital Memory & Pick-to-Light</title>
   <style>
     * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
     body { margin: 0; background: #0f172a; color: #f8fafc; padding: 16px; }
-    .container { max-width: 1100px; margin: auto; }
-    .header { display: flex; justify-content: space-between; align-items: center; background: #1e293b; padding: 14px 20px; border-radius: 12px; border: 1px solid #334155; margin-bottom: 16px; }
+    .container { max-width: 1150px; margin: auto; }
+    .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; background: #1e293b; padding: 14px 20px; border-radius: 12px; border: 1px solid #334155; margin-bottom: 16px; }
     .header h1 { margin: 0; font-size: 20px; color: #38bdf8; }
-    .badge { background: #0284c7; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+    .badge { background: #0284c7; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; }
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    @media(max-width: 800px) { .grid { grid-template-columns: 1fr; } }
+    @media(max-width: 850px) { .grid { grid-template-columns: 1fr; } }
     .card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
-    .card h2 { margin-top: 0; font-size: 16px; color: #e2e8f0; border-bottom: 1px solid #334155; padding-bottom: 8px; }
-    button { cursor: pointer; border: none; border-radius: 8px; padding: 10px 14px; font-weight: 600; font-size: 13px; transition: 0.2s; }
+    .card h2 { margin-top: 0; font-size: 15px; color: #e2e8f0; border-bottom: 1px solid #334155; padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+    button { cursor: pointer; border: none; border-radius: 8px; padding: 9px 13px; font-weight: 600; font-size: 12px; transition: 0.2s; }
     .btn-primary { background: #0284c7; color: white; }
     .btn-primary:hover { background: #0369a1; }
     .btn-success { background: #16a34a; color: white; }
     .btn-success:disabled { background: #475569; cursor: not-allowed; opacity: 0.6; }
     .btn-warn { background: #d97706; color: white; }
+    .btn-danger { background: #dc2626; color: white; }
     .btn-voice { background: #7c3aed; color: white; }
-    input[type="text"], input[type="date"] { background: #0f172a; border: 1px solid #475569; color: white; padding: 9px 12px; border-radius: 8px; width: 100%; font-size: 14px; }
-    .row { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+    .btn-ghost { background: #334155; color: #e2e8f0; }
+    input[type="text"], input[type="password"], input[type="date"] { background: #0f172a; border: 1px solid #475569; color: white; padding: 8px 11px; border-radius: 8px; width: 100%; font-size: 13px; }
+    .row { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
     .pill-group { display: inline-flex; gap: 4px; background: #0f172a; padding: 3px; border-radius: 6px; border: 1px solid #334155; }
     .pill { padding: 4px 8px; font-size: 11px; border-radius: 4px; background: transparent; color: #94a3b8; }
     .pill.active { background: #0284c7; color: white; }
     .rx-item { background: #0f172a; border: 1px solid #334155; padding: 10px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
     .rx-item.banned { border-color: #ef4444; background: #450a0a; }
-    .alert-red { background: #7f1d1d; border: 1px solid #ef4444; color: #fecaca; padding: 12px; border-radius: 8px; margin-bottom: 12px; font-weight: 600; }
+    .alert-red { background: #7f1d1d; border: 1px solid #ef4444; color: #fecaca; padding: 11px; border-radius: 8px; margin-bottom: 10px; font-weight: 600; font-size: 13px; }
     .res-green { background: #064e3b; border: 1px solid #10b981; padding: 14px; border-radius: 10px; margin-bottom: 10px; }
     .res-fyi { background: #451a03; border: 1px solid #f59e0b; padding: 14px; border-radius: 10px; margin-bottom: 10px; }
-    .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-left: 6px; }
+    .res-expired { background: #450a0a; border: 2px solid #ef4444; padding: 14px; border-radius: 10px; margin-bottom: 10px; }
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-left: 4px; }
     .tag-h1 { background: #ea580c; color: white; }
     .tag-x { background: #dc2626; color: white; }
     .tag-h { background: #2563eb; color: white; }
-    .loc-box { font-size: 18px; font-weight: bold; color: #34d399; margin: 6px 0; }
+    .loc-box { font-size: 17px; font-weight: bold; color: #34d399; margin: 6px 0; }
     table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    th, td { border-bottom: 1px solid #334155; padding: 8px; text-align: left; }
+    th, td { border-bottom: 1px solid #334155; padding: 7px; text-align: left; }
     th { color: #94a3b8; }
+    .footer-charter { text-align: center; background: #1e293b; border: 1px solid #0284c7; padding: 12px; border-radius: 10px; font-size: 13px; color: #bae6fd; margin-top: 8px; }
   </style>
 </head>
 <body>
 <div class="container">
   <div class="header">
     <div>
-      <h1>ZiGo Digital Memory V1 <span class="badge">LIVE DEMO ENGINE</span></h1>
-      <small style="color:#94a3b8;">Zero-Entry ERP CSV • 4-Eyes Maker-Checker Gate • Exact Name+Strength+Form Locator</small>
+      <h1>ZiGo ShelfSense V1 <span class="badge">DIGITAL MEMORY & INSPECTOR</span></h1>
+      <small style="color:#94a3b8;">The Universal Store Digital Memory & Pick-to-Light System • Zero-Entry ERP • 4-Eyes Safety</small>
     </div>
-    <div>
-      <span id="dbCount" style="font-size:13px; color:#38bdf8; font-weight:bold;">Inventory: 0 Items</span>
+    <div class="row" style="margin:0;">
+      <span id="dbCount" style="font-size:13px; color:#38bdf8; font-weight:bold;">Inventory: 0</span>
+      <span id="banCount" style="font-size:13px; color:#f87171; font-weight:bold;">| Banned Rules: 5</span>
     </div>
   </div>
-    <!-- SECTION 1A: SAMPLE ERP FORMAT & DOWNLOAD TEMPLATE -->
+  <!-- SECTION 1A: SAMPLE ERP FORMAT -->
   <div class="card">
     <h2>1A. Supported ERP Format & Sample Template</h2>
-    <div class="row" style="flex-wrap: wrap;">
-      <button class="btn-warn" onclick="downloadSampleCSV()">📥 Download Sample CSV Template</button>
-      <span style="color:#94a3b8; font-size:13px;">Reference structure for your existing billing/ERP export.</span>
+    <div class="row">
+      <button class="btn-warn" onclick="downloadSampleCSV()">📥 Download Sample Inventory CSV</button>
+      <button class="btn-ghost" onclick="downloadSampleBannedCSV()">📥 Download Sample Banned List CSV</button>
+      <span style="color:#94a3b8; font-size:12px;">Reference structure for billing/ERP & CDSCO banned list.</span>
     </div>
-
-    <div style="background:#0f172a; border:1px dashed #475569; border-radius:8px; padding:10px; margin-top:8px; font-size:12px;">
-      <div style="color:#94a3b8; margin-bottom:6px;">
-        <b style="color:#38bdf8;">Supported ERP Columns (Any Order):</b>
-        <span class="tag tag-h">Item Name*</span>
-        <span class="tag tag-h">Qty*</span>
-        <span class="tag" style="background:#334155;">Composition (Salt)</span>
-        <span class="tag" style="background:#334155;">Strength</span>
-        <span class="tag" style="background:#334155;">Supplier</span>
-        <span class="tag" style="background:#334155;">Manufacturer</span>
-        <span class="tag" style="background:#334155;">Batch#</span>
-        <span class="tag" style="background:#334155;">Expiry Date</span>
-        <span class="tag tag-h1">Rack | Shelf | Box (ZiGo)</span>
-      </div>
-      <div style="overflow-x:auto;">
-        <table style="font-size:11px; color:#cbd5e1;">
-          <thead>
-            <tr>
-              <th>SN</th><th>Item Name</th><th>Composition</th><th>Strength</th><th>Qty</th><th>Batch#</th><th>Expiry</th><th>Rack</th><th>Shelf</th><th>Box</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>1</td><td>Dolo 650 Tablet</td><td>Paracetamol</td><td>650mg</td><td>45</td><td>DL902</td><td>2027-08</td><td>Rack A</td><td>Shelf 2</td><td>Box 4</td>
-            </tr>
-            <tr>
-              <td>2</td><td>Augmentin 625 Tab</td><td>Amoxicillin + Clavulanic Acid</td><td>625mg</td><td>0</td><td>AG881</td><td>2027-04</td><td>Rack B</td><td>Shelf 1</td><td>Box 1</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+    <div style="background:#0f172a; border:1px dashed #475569; border-radius:8px; padding:8px; font-size:11px; color:#94a3b8;">
+      <b style="color:#38bdf8;">Auto-Mapped Columns (Any Order):</b>
+      <span class="tag tag-h">Item Name*</span>
+      <span class="tag tag-h">Qty*</span>
+      <span class="tag" style="background:#334155;">Composition (Salt)</span>
+      <span class="tag" style="background:#334155;">Strength</span>
+      <span class="tag" style="background:#334155;">Batch#</span>
+      <span class="tag" style="background:#334155;">Expiry Date (YYYY-MM / YYYY-MM-DD)</span>
+      <span class="tag tag-h1">Rack | Shelf | Box (ZiGo)</span>
     </div>
   </div>
 
-  <!-- SECTION 1B: STORE ERP INVENTORY UPLOAD -->
-  <div class="card">
-    <h2>1B. Store ERP Inventory Sync (Zero Data Entry — Auto Column Mapper)</h2>
-    <div class="row" style="flex-wrap: wrap;">
-      <input type="file" id="csvFile" accept=".csv" style="max-width: 280px; color:#cbd5e1;" />
-      <button class="btn-primary" onclick="loadSampleCSV()">⚡ Load Demo Data</button>
-      <span id="csvStatus" style="color:#34d399; font-size:13px;"></span>
-    </div>
-  </div>
-<div class="grid">
-    <!-- LEFT: PRESCRIPTION SCAN + 4-EYES MAKER-CHECKER GATE -->
+  <!-- SECTION 1B & 1C: INVENTORY SYNC + BANNED DRUGS CSV UPLOADER -->
+  <div class="grid">
     <div class="card">
-      <h2>2. Prescription Scan & 4-Eyes Safety Gate (Maker & Checker)</h2>
+      <h2>1B. Store ERP Inventory Sync (Zero Data Entry)</h2>
       <div class="row">
-        <input type="file" id="rxImage" accept="image/*" onchange="simulateRxScan()" />
-        <button class="btn-warn" onclick="simulateRxScan(true)">📄 Demo Rx Scan (With Banned Drug Test)</button>
+        <input type="file" id="csvFile" accept=".csv" style="max-width: 220px; color:#cbd5e1;" />
+        <button class="btn-primary" onclick="loadSampleCSV()">⚡ Load Demo CSV</button>
+        <button class="btn-success" onclick="exportUpdatedCSV()">📤 Export Mapped CSV</button>
+      </div>
+      <div id="csvStatus" style="color:#34d399; font-size:12px;"></div>
+    </div>
+
+    <div class="card">
+      <h2>1C. CDSCO / Govt Banned List Sync (Name + Salts)</h2>
+      <div class="row">
+        <input type="file" id="bannedCsvFile" accept=".csv" style="max-width: 230px; color:#cbd5e1;" />
+        <span style="font-size:12px; color:#94a3b8;">Upload CSV with Medicine Name or Salt columns.</span>
+      </div>
+      <div id="bannedStatus" style="color:#f87171; font-size:12px;">Active Default CDSCO Rules Loaded (5 Core FDCs)</div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- SECTION 2: MULTI-CUSTOMER PRESCRIPTION CAMERA / UPLOAD + VISION OCR -->
+    <div class="card">
+      <h2>
+        <span>2. Prescription Scan & 4-Eyes Safety Gate</span>
+        <button class="btn-ghost" style="padding:4px 9px; font-size:11px;" onclick="resetForNextCustomer()">🔄 Next Customer</button>
+      </h2>
+
+      <!-- Optional Gemini API Key for Live Vision OCR -->
+      <div class="row" style="background:#0f172a; padding:8px; border-radius:8px; border:1px solid #334155;">
+        <input type="password" id="geminiKeyInput" placeholder="Optional: Paste Gemini API Key for Live Vision OCR..." style="flex:1;" onchange="saveApiKey()" />
+        <span id="ocrModeBadge" class="badge" style="background:#475569;">Smart Demo OCR</span>
       </div>
 
-      <div id="rxVerificationPanel" style="display:none; margin-top:12px;">
+      <!-- 3-Way Rx Input: Camera Capture, Image Upload, or Demo Rx -->
+      <div class="row">
+        <label class="btn-primary" style="cursor:pointer;">
+          📷 Live Camera Scan
+          <input type="file" id="rxCameraInput" accept="image/*" capture="environment" style="display:none;" onchange="handleRxImage(this)" />
+        </label>
+        <label class="btn-ghost" style="cursor:pointer;">
+          📁 Upload Rx Image
+          <input type="file" id="rxFileInput" accept="image/*" style="display:none;" onchange="handleRxImage(this)" />
+        </label>
+        <button class="btn-warn" onclick="simulateRxScan(true)">🧪 Demo Rx (Banned Test)</button>
+      </div>
+
+      <div id="ocrProgress" style="display:none; color:#38bdf8; font-size:13px; margin-bottom:8px;">⏳ Reading prescription handwriting & verifying stamps with Vision AI...</div>
+
+      <div id="rxVerificationPanel" style="display:none; margin-top:10px;">
         <div class="row">
           <div style="flex:1;">
             <label style="font-size:11px; color:#94a3b8;">Rx Validity Date (Mandatory)</label>
@@ -140,11 +157,14 @@
       </div>
     </div>
 
-    <!-- RIGHT: DIRECT SEARCH + RACK LOCATOR + ONLY FYI -->
+    <!-- SECTION 3: INSTANT RACK LOCATOR + EXPIRY CHECK + ONLY FYI -->
     <div class="card">
-      <h2>3. Instant Rack Locator ("Where" Engine + Only FYI)</h2>
+      <h2>
+        <span>3. Instant Rack Locator & Expiry Inspector</span>
+        <button class="btn-danger" style="padding:5px 10px; font-size:11px;" onclick="runExpiryAudit()">⏳ Expiry Check</button>
+      </h2>
       <div class="row">
-        <input type="text" id="directSearchInput" placeholder="Search Name + Strength (e.g. Dolo 650, Azithral 500)..." onkeyup="if(event.key==='Enter') runDirectSearch()" />
+        <input type="text" id="directSearchInput" placeholder="Search Name + Strength (e.g. Dolo 650, Telma)..." onkeyup="if(event.key==='Enter') runDirectSearch()" />
         <button class="btn-voice" onclick="startVoiceSearch()">🎤 Speak</button>
         <button class="btn-primary" onclick="runDirectSearch()">Locate</button>
       </div>
@@ -160,34 +180,41 @@
       </div>
 
       <div id="searchResultsArea" style="margin-top:12px;">
-        <div style="color:#64748b; font-size:13px; text-align:center; padding:30px 10px;">
-          Upload CSV or click "Load Sample CSV", then scan Rx or search a medicine to locate exact Rack, Shelf & Box.
+        <div style="color:#64748b; font-size:13px; text-align:center; padding:26px 10px;">
+          Upload CSV (or Load Demo CSV), then scan Rx via Camera/Upload, Speak, or click "Expiry Check".
         </div>
       </div>
     </div>
   </div>
 
-  <!-- BOTTOM: CENTRALIZED CONVEX AUDIT TRAIL -->
+  <!-- SECTION 4: CENTRALIZED AUDIT TRAIL -->
   <div class="card">
     <h2>4. Centralized Audit Trail (Convex DB Immutable Log Preview)</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Time</th>
-          <th>Trigger Source</th>
-          <th>Dr. Reg# / Validity</th>
-          <th>Items / Query</th>
-          <th>4-Eyes Safety Status</th>
-          <th>Action Taken</th>
-        </tr>
-      </thead>
-      <tbody id="auditTableBody"></tbody>
-    </table>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Trigger Source</th>
+            <th>Dr. Reg# / Validity</th>
+            <th>Items / Query</th>
+            <th>4-Eyes Safety Status</th>
+            <th>Action Taken</th>
+          </tr>
+        </thead>
+        <tbody id="auditTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- UNIVERSAL HUMAN-FIRST ETHICAL CHARTER FOOTER -->
+  <div class="footer-charter">
+    🤝 <b>Human-First Approach Always • Tech is Only to Empower</b> &nbsp;|&nbsp;
+    <span style="color:#38bdf8;">Zero Employment Impact Guarantee:</span> Built to empower store staff & boost TAT—never to replace human jobs.
   </div>
 </div>
 <script>
-  // CDSCO Banned Salts / FDC List (Sample Core Rules)
-  const BANNED_SALTS = [
+  let bannedRules = [
     "nimesulide + paracetamol",
     "aceclofenac + paracetamol + rabeprazole",
     "fixed dose combination",
@@ -195,7 +222,6 @@
     "phenylpropanolamine"
   ];
 
-  // Schedule H1 / X Reference Salts
   const SCHEDULE_H1 = ["cefixime", "azithromycin", "levofloxacin", "alprazolam", "tramadol"];
   const SCHEDULE_X  = ["ketamine", "methylphenidate", "morphine"];
 
@@ -203,18 +229,23 @@
   let scannedItems = [];
   let directForm = "ALL";
 
-  // 1. Sample ERP CSV Data
   const SAMPLE_CSV_TEXT = `SN,Item Name,Composition,Strength,Supplier,Manufacturer,Qty,Batch#,Expiry Date,Rack,Shelf,Box
-1,Dolo 650 Tablet,Paracetamol,650mg,MedPlus Dist,Micro Labs,45,DL902,2027-08,Rack A,Shelf 2,Box 4
-2,Calpol 650 Tablet,Paracetamol,650mg,Apex Pharma,GSK,30,CP112,2027-11,Rack A,Shelf 2,Box 5
-3,Calpol 250 Syrup,Paracetamol,250mg/5ml,Apex Pharma,GSK,18,CS440,2027-05,Rack C,Shelf 1,Box 2
-4,Augmentin 625 Duo Tablet,Amoxicillin + Clavulanic Acid,625mg,City Distributors,GSK,0,AG881,2027-04,Rack B,Shelf 1,Box 1
-5,Moxikind CV 625 Tablet,Amoxicillin + Clavulanic Acid,625mg,Mankind Dist,Mankind,22,MK309,2027-09,Rack B,Shelf 1,Box 3
-6,Azithral 500 Tablet,Azithromycin,500mg,Alembic Agency,Alembic,14,AZ774,2027-06,Rack D,Shelf 3,Box 2
-7,Azithral Liquid 200 Syrup,Azithromycin,200mg/5ml,Alembic Agency,Alembic,9,AZL19,2027-03,Rack C,Shelf 2,Box 1
-8,Pan-D Capsule,Pantoprazole + Domperidone,40mg,Alkem Dist,Alkem,60,PD501,2028-01,Rack A,Shelf 4,Box 1
-9,Sumo Tablet,Nimesulide + Paracetamol,100mg+325mg,Alkem Dist,Alkem,10,SM999,2026-12,Rack E,Shelf 1,Box 9`;
+1,Dolo 650 Tablet,Paracetamol,650mg,MedPlus Dist,Micro Labs,45,DL902,2027-08-15,Rack A,Shelf 2,Box 4
+2,Calpol 650 Tablet,Paracetamol,650mg,Apex Pharma,GSK,30,CP112,2027-11-20,Rack A,Shelf 2,Box 5
+3,Calpol 250 Syrup,Paracetamol,250mg/5ml,Apex Pharma,GSK,18,CS440,2027-05-10,Rack C,Shelf 1,Box 2
+4,Augmentin 625 Duo Tablet,Amoxicillin + Clavulanic Acid,625mg,City Distributors,GSK,0,AG881,2027-04-01,Rack B,Shelf 1,Box 1
+5,Moxikind CV 625 Tablet,Amoxicillin + Clavulanic Acid,625mg,Mankind Dist,Mankind,22,MK309,2027-09-12,Rack B,Shelf 1,Box 3
+6,Azithral 500 Tablet,Azithromycin,500mg,Alembic Agency,Alembic,14,AZ774,2026-09-01,Rack D,Shelf 3,Box 2
+7,Azithral Liquid 200 Syrup,Azithromycin,200mg/5ml,Alembic Agency,Alembic,9,AZL19,2027-03-15,Rack C,Shelf 2,Box 1
+8,Pan-D Capsule,Pantoprazole + Domperidone,40mg,Alkem Dist,Alkem,60,PD501,2028-01-10,Rack A,Shelf 4,Box 1
+9,Telma H-Banned Combo Tablet,Nimesulide + Paracetamol,100mg+325mg,Alkem Dist,Alkem,10,SM999,2026-12-30,Rack E,Shelf 1,Box 9`;
 
+  const SAMPLE_BANNED_CSV = `Medicine Name,Banned Composition / Salt,Notification Ref
+Corex DX Cough Syrup,Chlorpheniramine Maleate + Codeine,CDSCO-26A
+Sumo Tablet,Nimesulide + Paracetamol,CDSCO-FDC
+Vicks Action 500 Extra,Paracetamol + Phenylephrine + Caffeine,CDSCO-FDC`;
+
+  // File Listeners
   document.getElementById('csvFile').addEventListener('change', function(e) {
     const file = e.target.files.item(0);
     if (!file) return;
@@ -223,11 +254,53 @@
     reader.readAsText(file);
   });
 
+  document.getElementById('bannedCsvFile').addEventListener('change', function(e) {
+    const file = e.target.files.item(0);
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => parseBannedCSV(evt.target.result, file.name);
+    reader.readAsText(file);
+  });
+
   function loadSampleCSV() {
     parseCSV(SAMPLE_CSV_TEXT, "Sample_Chemist_ERP.csv");
   }
 
-  // Smart Auto-Column Mapper
+  function downloadSampleCSV() {
+    triggerDownload(SAMPLE_CSV_TEXT, "ZiGo_ShelfSense_Sample_Inventory.csv");
+  }
+
+  function downloadSampleBannedCSV() {
+    triggerDownload(SAMPLE_BANNED_CSV, "ZiGo_CDSCO_Banned_List_Sample.csv");
+  }
+
+  function triggerDownload(content, filename) {
+    const blob = new Blob([content], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function parseBannedCSV(text, fileName) {
+    const lines = text.trim().split(/\r?\n/);
+    lines.shift(); // skip header
+    const newRules = [];
+    lines.forEach(line => {
+      if (!line.trim()) return;
+      line.split(',').forEach(cell => {
+        const clean = cell.trim().toLowerCase();
+        if (clean.length >= 4 && !clean.startsWith('cdsco')) newRules.push(clean);
+      });
+    });
+    if (newRules.length > 0) {
+      bannedRules = Array.from(new Set([...bannedRules, ...newRules]));
+      localStorage.setItem('zigo_banned_rules', JSON.stringify(bannedRules));
+      document.getElementById('banCount').innerText = `| Banned Rules: ${bannedRules.length}`;
+      document.getElementById('bannedStatus').innerText = `✓ Loaded "${fileName}" (${bannedRules.length} active rules)`;
+    }
+  }
+
   function parseCSV(text, fileName) {
     const lines = text.trim().split(/\r?\n/);
     const headerRow = lines.shift() || "";
@@ -238,36 +311,47 @@
     const idxSalt = findCol(['comp', 'salt', 'generic']);
     const idxStr  = findCol(['str', 'power', 'mg']);
     const idxQty  = findCol(['qty', 'stock', 'bal']);
+    const idxBatch= findCol(['batch']);
     const idxExp  = findCol(['exp']);
     const idxRack = findCol(['rack']);
     const idxShlf = findCol(['shelf']);
     const idxBox  = findCol(['box']);
 
     inventory = [];
-    lines.forEach(line => {
+    lines.forEach((line, idx) => {
       if (!line.trim()) return;
       const cols = line.split(',').map(c => c.trim());
       const rawName = idxName >= 0 ? (cols.at(idxName) || "") : "";
       const rawStr  = idxStr >= 0 ? (cols.at(idxStr) || "") : "";
-      const form = detectForm(rawName + " " + rawStr);
       inventory.push({
+        id: idx,
         name: rawName,
         salt: (idxSalt >= 0 ? (cols.at(idxSalt) || "") : "").toLowerCase(),
         saltDisplay: idxSalt >= 0 ? (cols.at(idxSalt) || "N/A") : "N/A",
         strength: rawStr.toLowerCase(),
         strengthDisplay: rawStr,
-        form: form,
+        form: detectForm(rawName + " " + rawStr),
         qty: parseInt(idxQty >= 0 ? (cols.at(idxQty) || "0") : "0", 10),
+        batch: idxBatch >= 0 ? (cols.at(idxBatch) || "N/A") : "N/A",
         expiry: idxExp >= 0 ? (cols.at(idxExp) || "N/A") : "N/A",
-        rack: idxRack >= 0 ? (cols.at(idxRack) || "Unassigned") : "Unassigned",
-        shelf: idxShlf >= 0 ? (cols.at(idxShlf) || "-") : "-",
-        box: idxBox >= 0 ? (cols.at(idxBox) || "-") : "-"
+        rack: (idxRack >= 0 && cols.at(idxRack)) ? cols.at(idxRack) : "Unassigned",
+        shelf: (idxShlf >= 0 && cols.at(idxShlf)) ? cols.at(idxShlf) : "-",
+        box: (idxBox >= 0 && cols.at(idxBox)) ? cols.at(idxBox) : "-"
       });
     });
 
-    document.getElementById('dbCount').innerText = `Inventory: ${inventory.length} Items`;
-    document.getElementById('csvStatus').innerText = `✓ Loaded "${fileName}" (${inventory.length} items auto-mapped)`;
+    document.getElementById('dbCount').innerText = `Inventory: ${inventory.length}`;
+    document.getElementById('csvStatus').innerText = `✓ Loaded "${fileName}" (${inventory.length} items)`;
     localStorage.setItem('zigo_saved_csv', JSON.stringify({ text, fileName }));
+  }
+
+  function exportUpdatedCSV() {
+    if (inventory.length === 0) { alert("No inventory loaded to export."); return; }
+    const rows = ["SN,Item Name,Composition,Strength,Qty,Batch#,Expiry Date,Rack,Shelf,Box"];
+    inventory.forEach((it, i) => {
+      rows.push(`${i+1},${it.name},${it.saltDisplay},${it.strengthDisplay},${it.qty},${it.batch},${it.expiry},${it.rack},${it.shelf},${it.box}`);
+    });
+    triggerDownload(rows.join("\n"), "ZiGo_Mapped_Inventory_Updated.csv");
   }
 
   function detectForm(text) {
@@ -277,18 +361,94 @@
     if (t.includes('cap') || t.includes('capsule')) return 'CAP';
     return 'TAB';
   }
-
   function getScheduleTag(salt) {
     if (SCHEDULE_X.some(s => salt.includes(s))) return '<span class="tag tag-x">SCHEDULE X (Duplicate Rx + Lockbox)</span>';
-    if (SCHEDULE_H1.some(s => salt.includes(s))) return '<span class="tag tag-h1">SCHEDULE H1 (3-Yr Register Mandatory)</span>';
+    if (SCHEDULE_H1.some(s => salt.includes(s))) return '<span class="tag tag-h1">SCHEDULE H1 (3-Yr Register)</span>';
     return '<span class="tag tag-h">SCHEDULE H</span>';
   }
 
-  function isBannedSalt(saltOrName) {
-    const q = saltOrName.toLowerCase();
-    return BANNED_SALTS.some(b => q.includes(b));
+  function isBannedEntry(nameOrSalt) {
+    const q = (nameOrSalt || "").toLowerCase();
+    return bannedRules.some(rule => q.includes(rule));
   }
-  // 2. Prescription Scan & 4-Eyes Safety Gate
+
+  function saveApiKey() {
+    const key = document.getElementById('geminiKeyInput').value.trim();
+    if (key) {
+      localStorage.setItem('zigo_gemini_key', key);
+      document.getElementById('ocrModeBadge').innerText = "Live Vision OCR ON";
+      document.getElementById('ocrModeBadge').style.background = "#16a34a";
+    }
+  }
+
+  function resetForNextCustomer() {
+    document.getElementById('rxVerificationPanel').style.display = 'none';
+    document.getElementById('rxCameraInput').value = "";
+    document.getElementById('rxFileInput').value = "";
+    document.getElementById('searchResultsArea').innerHTML = '<div style="color:#38bdf8; text-align:center; padding:20px;">Ready for Next Customer — Scan Rx, Speak, or Search!</div>';
+    scannedItems = [];
+  }
+
+  async function handleRxImage(inputEl) {
+    const file = inputEl.files.item(0);
+    if (!file) return;
+    if (inventory.length === 0) loadSampleCSV();
+
+    const apiKey = localStorage.getItem('zigo_gemini_key') || document.getElementById('geminiKeyInput').value.trim();
+    if (!apiKey) { simulateRxScan(false); return; }
+
+    document.getElementById('ocrProgress').style.display = 'block';
+    try {
+      const base64Data = await toBase64(file);
+      const cleanBase64 = base64Data.split(',').at(1);
+      const prompt = `Extract medical prescription details strictly as JSON: {"rxDate":"YYYY-MM-DD","doctorRegNo":"string","medicines":[{"name":"string","strength":"string","form":"TAB|CAP|SYP|INJ"}]}. Do not wrap in markdown.`;
+
+      const resp = await fetch(`https://googleapis.com{apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: file.type, data: cleanBase64 } }] }]
+        })
+      });
+      const data = await resp.json();
+      const rawText = data.candidates.at(0).content.parts.at(0).text.replace(/```json|```/g, '').trim();
+      const parsed = JSON.parse(rawText);
+
+      document.getElementById('rxVerificationPanel').style.display = 'block';
+      document.getElementById('rxDate').value = parsed.rxDate || new Date().toISOString().slice(0, 10);
+      document.getElementById('drRegNo').value = parsed.doctorRegNo || "";
+      document.getElementById('stampChecked').checked = false;
+
+      scannedItems = (parsed.medicines || []).map(m => {
+        const dbMatch = inventory.find(it => it.name.toLowerCase().includes((m.name || "").toLowerCase()));
+        const banned = isBannedEntry(m.name) || (dbMatch && isBannedEntry(dbMatch.salt));
+        return {
+          name: m.name || "Unknown",
+          strength: m.strength || "",
+          form: (m.form || "TAB").toUpperCase(),
+          confirmed: false,
+          banned: banned
+        };
+      });
+      renderRxItems();
+      validateGate();
+    } catch (err) {
+      alert("Vision OCR fallback activated (Check API key or internet).");
+      simulateRxScan(false);
+    } finally {
+      document.getElementById('ocrProgress').style.display = 'none';
+      inputEl.value = "";
+    }
+  }
+
+  function toBase64(file) {
+    return new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result);
+      r.onerror = rej;
+      r.readAsDataURL(file);
+    });
+  }
   function simulateRxScan(includeBanned = false) {
     if (inventory.length === 0) loadSampleCSV();
     document.getElementById('rxVerificationPanel').style.display = 'block';
@@ -301,15 +461,8 @@
       { name: "Azithral 500", strength: "500mg", form: "TAB", confirmed: false, banned: false },
       { name: "Calpol 250", strength: "250mg/5ml", form: "SYP", confirmed: false, banned: false }
     ];
-
     if (includeBanned) {
-      scannedItems.push({
-        name: "Sumo (Nimesulide + Paracetamol)",
-        strength: "100mg+325mg",
-        form: "TAB",
-        confirmed: false,
-        banned: true
-      });
+      scannedItems.push({ name: "Telma H-Banned Combo (Nimesulide + Paracetamol)", strength: "100mg+325mg", form: "TAB", confirmed: false, banned: true });
     }
     renderRxItems();
     validateGate();
@@ -325,7 +478,7 @@
         <div>
           <input type="checkbox" ${item.confirmed ? "checked" : ""} ${item.banned ? "disabled" : ""} onchange="toggleItemConfirm(${idx}, this.checked)" />
           <b>${item.name}</b> <small style="color:#94a3b8;">(${item.strength})</small>
-          ${item.banned ? '<span class="tag tag-x">⛔ CDSCO BANNED FDC</span>' : ''}
+          ${item.banned ? '<span class="tag tag-x">⛔ CDSCO BANNED</span>' : ''}
         </div>
         <div class="pill-group">
           ${['TAB','CAP','SYP','INJ'].map(f => `
@@ -337,15 +490,8 @@
     });
   }
 
-  function toggleItemConfirm(idx, val) {
-    scannedItems.at(idx).confirmed = val;
-    validateGate();
-  }
-
-  function setItemForm(idx, form) {
-    scannedItems.at(idx).form = form;
-    renderRxItems();
-  }
+  function toggleItemConfirm(idx, val) { scannedItems.at(idx).confirmed = val; validateGate(); }
+  function setItemForm(idx, form) { scannedItems.at(idx).form = form; renderRxItems(); }
 
   function validateGate() {
     const dateVal = document.getElementById('rxDate').value;
@@ -358,8 +504,8 @@
     const alertBox = document.getElementById('bannedAlertBox');
     if (bannedItems.length > 0) {
       alertBox.style.display = 'block';
-      alertBox.innerHTML = `⛔ CHECK & ACT ALERT: Prohibited/Banned Drug detected (${bannedItems.map(b=>b.name).join(', ')}). Search loop HALTED for banned item!`;
-      speakText("Alert. Banned drug combination detected. Check and act. Do not dispense.");
+      alertBox.innerHTML = `⛔ CHECK & ACT ALERT: Prohibited/Banned Drug detected (${bannedItems.map(b=>b.name).join(', ')}). Search loop HALTED!`;
+      speakText("Alert. Banned drug detected. Check and act. Do not dispense.");
       logAudit("RX_SCAN", `${regVal} | ${dateVal}`, bannedItems.map(b=>b.name).join(', '), "BLOCKED_BANNED_DRUG", "HALTED_CHECK_AND_ACT");
     } else {
       alertBox.style.display = 'none';
@@ -379,20 +525,47 @@
     const regVal  = document.getElementById('drRegNo').value.trim();
     const dateVal = document.getElementById('rxDate').value;
     const safeItems = scannedItems.filter(i => !i.banned);
-
     const area = document.getElementById('searchResultsArea');
     area.innerHTML = "";
     let voiceSummary = [];
 
     safeItems.forEach(req => {
-      const html = renderMatchCard(req.name, req.strength, req.form, voiceSummary);
-      area.innerHTML += html;
+      area.innerHTML += renderMatchCard(req.name, req.strength, req.form, voiceSummary);
     });
-
     if (voiceSummary.length > 0) speakText(voiceSummary.join(". "));
     logAudit("RX_SCAN_CONFIRMED", `${regVal} | ${dateVal}`, safeItems.map(i=>`${i.name} [${i.form}]`).join(', '), "4_EYES_VERIFIED", "RACK_LOCATED");
   }
-  // 3. Direct Search (Name + Strength + Form) & Banned Guardrail
+
+  function checkExpiryStatus(expStr) {
+    if (!expStr || expStr === "N/A") return "SAFE";
+    const clean = expStr.trim();
+    const normalized = clean.length === 7 ? `${clean}-28` : clean;
+    const expDate = new Date(normalized);
+    if (isNaN(expDate.getTime())) return "SAFE";
+    const today = new Date();
+    const diffDays = (expDate - today) / (1000 * 60 * 60 * 24);
+    if (diffDays < 0) return "EXPIRED";
+    if (diffDays <= 90) return "NEAR_EXPIRY";
+    return "SAFE";
+  }
+
+  function runExpiryAudit() {
+    if (inventory.length === 0) loadSampleCSV();
+    const area = document.getElementById('searchResultsArea');
+    const flagged = inventory.filter(it => checkExpiryStatus(it.expiry) !== "SAFE");
+    if (flagged.length === 0) {
+      area.innerHTML = `<div class="res-green">✅ <b>Expiry Audit Clear:</b> All ${inventory.length} items are within safe shelf life!</div>`;
+      return;
+    }
+    area.innerHTML = flagged.map(it => {
+      const st = checkExpiryStatus(it.expiry);
+      if (st === "EXPIRED") {
+        return `<div class="res-expired"><b>⛔ EXPIRED BATCH — DO NOT DISPENSE</b><br/>${it.name} (Batch: ${it.batch} | Exp: ${it.expiry}) ➔ Remove from <b>${it.rack} | ${it.shelf} | ${it.box}</b></div>`;
+      }
+      return `<div class="res-fyi"><b>🟠 NEAR EXPIRY (< 90 Days) — FEFO Priority</b><br/>${it.name} (Batch: ${it.batch} | Exp: ${it.expiry}) ➔ <b>${it.rack} | ${it.shelf} | ${it.box}</b></div>`;
+    }).join('');
+    logAudit("EXPIRY_AUDIT", "Full Store Scan", `${flagged.length} Flagged Batches`, "EXPIRY_CHECK_RUN", "ALERT_DISPLAYED");
+  }
   function setDirectForm(form, el) {
     directForm = form;
     document.querySelectorAll('#directFormFilter .pill').forEach(p => p.classList.remove('active'));
@@ -407,10 +580,10 @@
 
     const area = document.getElementById('searchResultsArea');
     const matchedInDb = inventory.find(it => it.name.toLowerCase().includes(query.toLowerCase()));
-    if (isBannedSalt(query) || (matchedInDb && isBannedSalt(matchedInDb.salt))) {
-      area.innerHTML = `<div class="alert-red">⛔ CHECK & ACT ALERT: "${query}" contains a CDSCO Banned Drug Combination. Rack location is BLOCKED!</div>`;
+    if (isBannedEntry(query) || (matchedInDb && isBannedEntry(matchedInDb.salt)) || (matchedInDb && isBannedEntry(matchedInDb.name))) {
+      area.innerHTML = `<div class="alert-red">⛔ CHECK & ACT ALERT: "${query}" matches CDSCO Banned List (Name or Salt). Rack location BLOCKED!</div>`;
       speakText("Alert. Banned drug detected. Do not sell.");
-      logAudit("DIRECT_SEARCH", "N/A (Direct Query)", query, "BLOCKED_BANNED_DRUG", "HALTED_CHECK_AND_ACT");
+      logAudit("DIRECT_SEARCH", "Counter Query", query, "BLOCKED_BANNED_DRUG", "HALTED_CHECK_AND_ACT");
       return;
     }
 
@@ -420,11 +593,27 @@
     logAudit("DIRECT_SEARCH", "Counter Query", `${query} [${directForm}]`, "SAFE_CHECK_PASSED", "RACK_LOCATED");
   }
 
+  function assignRackQuick(itemId) {
+    const item = inventory.find(i => i.id === itemId);
+    if (!item) return;
+    const r = prompt(`Set Rack for ${item.name}:`, item.rack === "Unassigned" ? "Rack A" : item.rack);
+    if (!r) return;
+    const s = prompt(`Set Shelf for ${item.name}:`, item.shelf === "-" ? "Shelf 1" : item.shelf) || "-";
+    const b = prompt(`Set Box for ${item.name}:`, item.box === "-" ? "Box 1" : item.box) || "-";
+    item.rack = r.trim(); item.shelf = s.trim(); item.box = b.trim();
+    runDirectSearch();
+  }
+
   function renderMatchCard(queryName, queryStrength, queryForm, voiceSummary) {
-        const qTokens = queryName.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(Boolean);
-const matches = inventory.filter(it => {
+    const qTokens = queryName.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(Boolean);
+    const matches = inventory.filter(it => {
       const hay = (it.name + " " + it.strengthDisplay).toLowerCase();
-      const nameOk = qTokens.every(tok => hay.includes(tok));
+      const nameOk = qTokens.every(tok => {
+        if (hay.includes(tok)) return true;
+        const cleanTok = tok.replace(/[aeiou]/g, '');
+        const cleanHay = hay.replace(/[aeiou]/g, '');
+        return cleanTok.length >= 3 && cleanHay.includes(cleanTok);
+      });
       const strOk  = !queryStrength || it.strength.includes(queryStrength.toLowerCase());
       const formOk = !queryForm || it.form === queryForm;
       return nameOk && strOk && formOk;
@@ -435,26 +624,35 @@ const matches = inventory.filter(it => {
     }
 
     return matches.map(item => {
+      const expStatus = checkExpiryStatus(item.expiry);
+      if (expStatus === "EXPIRED") {
+        voiceSummary.push(`Warning. ${item.name} is expired. Do not dispense.`);
+        return `
+          <div class="res-expired">
+            <div style="font-size:15px; font-weight:bold; color:#fca5a5;">⛔ EXPIRED BATCH — DO NOT DISPENSE</div>
+            <div><b>${item.name}</b> | Batch: ${item.batch} | Expired: <b>${item.expiry}</b></div>
+            <div style="font-size:12px; margin-top:4px;">Location to clear: ${item.rack} ➔ ${item.shelf} ➔ ${item.box}</div>
+          </div>
+        `;
+      }
+
       if (item.qty > 0) {
         voiceSummary.push(`${item.name}, ${item.rack}, ${item.shelf}, ${item.box}`);
         return `
           <div class="res-green">
-            <div style="display:flex; justify-content:space-between;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
               <b>✅ ${item.name} (${item.form})</b>
-              <span>Stock: <b>${item.qty}</b> | Exp: ${item.expiry}</span>
+              <button class="btn-ghost" style="padding:3px 8px; font-size:11px;" onclick="assignRackQuick(${item.id})">📍 Set/Edit Rack</button>
             </div>
             <div class="loc-box">📍 ${item.rack} ➔ ${item.shelf} ➔ ${item.box}</div>
             <div style="font-size:12px; color:#a7f3d0;">
-              Salt: ${item.saltDisplay} (${item.strengthDisplay}) ${getScheduleTag(item.salt)}
+              Stock: <b>${item.qty}</b> | Exp: ${item.expiry} ${expStatus === 'NEAR_EXPIRY' ? '<span class="tag tag-h1">NEAR EXPIRY</span>' : ''} | Salt: ${item.saltDisplay} ${getScheduleTag(item.salt)}
             </div>
           </div>
         `;
       } else {
         const alts = inventory.filter(alt =>
-          alt.qty > 0 &&
-          alt.salt === item.salt &&
-          alt.form === item.form &&
-          alt.name !== item.name
+          alt.qty > 0 && alt.salt === item.salt && alt.form === item.form && alt.name !== item.name && checkExpiryStatus(alt.expiry) !== "EXPIRED"
         );
         return `
           <div class="res-fyi">
@@ -478,7 +676,6 @@ const matches = inventory.filter(it => {
     }).join('');
   }
 
-  // Text-to-Voice Output
   function speakText(msg) {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
@@ -488,27 +685,23 @@ const matches = inventory.filter(it => {
     }
   }
 
-  // Voice-to-Text Input
   function startVoiceSearch() {
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRec) { alert("Voice recognition supported in Chrome/Edge."); return; }
     const rec = new SpeechRec();
     rec.lang = 'en-IN';
     rec.onresult = (e) => {
-      const firstResult = e.results.item(0).item(0).transcript;
-      document.getElementById('directSearchInput').value = firstResult;
+      document.getElementById('directSearchInput').value = e.results.item(0).item(0).transcript;
       runDirectSearch();
     };
     rec.start();
   }
 
-  // Centralized Immutable Audit Logger (Convex DB Ready)
   function logAudit(trigger, meta, items, safety, action) {
     const tbody = document.getElementById('auditTableBody');
     const tr = document.createElement('tr');
-    const time = new Date().toLocaleTimeString();
     tr.innerHTML = `
-      <td>${time}</td>
+      <td>${new Date().toLocaleTimeString()}</td>
       <td><b>${trigger}</b></td>
       <td>${meta}</td>
       <td>${items}</td>
@@ -517,19 +710,25 @@ const matches = inventory.filter(it => {
     `;
     tbody.prepend(tr);
   }
-  function downloadSampleCSV() {
-    const blob = new Blob([SAMPLE_CSV_TEXT], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'ZiGo_Store_Memory_Sample.csv';
-    a.click();
-    URL.revokeObjectURL(url);
-  }
+
   window.addEventListener('DOMContentLoaded', () => {
-  const saved = localStorage.getItem('zigo_saved_csv');
-  if (saved) { const d = JSON.parse(saved); parseCSV(d.text, d.fileName); }
-});
+    const savedKey = localStorage.getItem('zigo_gemini_key');
+    if (savedKey) {
+      document.getElementById('geminiKeyInput').value = savedKey;
+      document.getElementById('ocrModeBadge').innerText = "Live Vision OCR ON";
+      document.getElementById('ocrModeBadge').style.background = "#16a34a";
+    }
+    const savedBan = localStorage.getItem('zigo_banned_rules');
+    if (savedBan) {
+      bannedRules = JSON.parse(savedBan);
+      document.getElementById('banCount').innerText = `| Banned Rules: ${bannedRules.length}`;
+    }
+    const savedCsv = localStorage.getItem('zigo_saved_csv');
+    if (savedCsv) {
+      const d = JSON.parse(savedCsv);
+      parseCSV(d.text, d.fileName);
+    }
+  });
 </script>
 </body>
 </html>
