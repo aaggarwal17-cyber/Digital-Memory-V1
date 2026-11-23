@@ -113,19 +113,26 @@
         <input type="password" id="geminiKeyInput" placeholder="Optional: Paste Gemini API Key for Live Vision OCR..." style="flex:1;" onchange="saveApiKey()" />
         <span id="ocrModeBadge" class="badge" style="background:#475569;">Smart Demo OCR</span>
       </div>
-
-      <!-- 3-Way Rx Input: Camera Capture, Image Upload, or Demo Rx -->
+      <!-- 3-Way Rx Input: Live Webcam, File Upload, or Demo Rx -->
       <div class="row">
-        <label class="btn-primary" style="cursor:pointer;">
-          📷 Live Camera Scan
-          <input type="file" id="rxCameraInput" accept="image/*" capture="environment" style="display:none;" onchange="handleRxImage(this)" />
-        </label>
+        <button class="btn-primary" onclick="openLiveCamera()">📷 Live Camera Scan</button>
         <label class="btn-ghost" style="cursor:pointer;">
           📁 Upload Rx Image
           <input type="file" id="rxFileInput" accept="image/*" style="display:none;" onchange="handleRxImage(this)" />
         </label>
         <button class="btn-warn" onclick="simulateRxScan(true)">🧪 Demo Rx (Banned Test)</button>
       </div>
+
+      <!-- Live Webcam Viewfinder Box -->
+      <div id="liveCamBox" style="display:none; background:#0f172a; padding:10px; border-radius:8px; border:1px solid #38bdf8; margin-bottom:10px; text-align:center;">
+        <video id="webcamVideo" autoplay playsinline style="width:100%; max-height:240px; border-radius:6px; background:black;"></video>
+        <div class="row" style="justify-content:center; margin-top:8px; margin-bottom:0;">
+          <button class="btn-success" onclick="captureWebcamPhoto()">📸 Capture Prescription</button>
+          <button class="btn-danger" onclick="closeLiveCamera()">✖ Close Camera</button>
+        </div>
+      </div>
+  
+      
 
       <div id="ocrProgress" style="display:none; color:#38bdf8; font-size:13px; margin-bottom:8px;">⏳ Reading prescription handwriting & verifying stamps with Vision AI...</div>
 
@@ -729,6 +736,35 @@ Vicks Action 500 Extra,Paracetamol + Phenylephrine + Caffeine,CDSCO-FDC`;
       parseCSV(d.text, d.fileName);
     }
   });
+    let camStream = null;
+
+  async function openLiveCamera() {
+    try {
+      camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+      document.getElementById('webcamVideo').srcObject = camStream;
+      document.getElementById('liveCamBox').style.display = 'block';
+    } catch (err) {
+      alert("Camera permission blocked or no webcam found. Please use 'Upload Rx Image'.");
+    }
+  }
+
+  function closeLiveCamera() {
+    if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
+    document.getElementById('liveCamBox').style.display = 'none';
+  }
+
+  function captureWebcamPhoto() {
+    const video = document.getElementById('webcamVideo');
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    closeLiveCamera();
+    canvas.toBlob(blob => {
+      const fakeInput = { files: [new File([blob], "webcam_rx.jpg", { type: "image/jpeg" })], value: "" };
+      handleRxImage(fakeInput);
+    }, 'image/jpeg', 0.9);
+  }
 </script>
 </body>
 </html>
