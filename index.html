@@ -62,13 +62,32 @@
 
   <!-- SECTION 1A: SAMPLE ERP & OWNER WATCHLIST TEMPLATES -->
   <div class="card">
-    <h2>1A. Supported ERP & Owner Watchlist CSV Formats (Zero Hardcoding)</h2>
+    <h2>1A. Supported ERP & Owner Watchlist CSV Formats (Auto-Mapped Fields)</h2>
     <div class="row">
-      <button class="btn-warn" onclick="downloadSampleCSV()">📥 Sample Inventory CSV</button>
-      <button class="btn-ghost" onclick="downloadSampleBannedCSV()">📥 Sample Owner Watchlist CSV</button>
+      <button class="btn-warn" onclick="downloadSampleCSV()">📥 Download Sample Inventory CSV</button>
+      <button class="btn-ghost" onclick="downloadSampleBannedCSV()">📥 Download Sample Watchlist CSV</button>
       <span style="color:#94a3b8; font-size:12px;">Rack = Almirah • Shelf = Compartment • Box = Item Bin</span>
     </div>
+    <div style="background:#0f172a; border:1px dashed #475569; border-radius:8px; padding:10px; font-size:11px; color:#94a3b8; line-height:1.8;">
+      <div>
+        <b style="color:#38bdf8;">1. Inventory CSV Columns (Any Order):</b>
+        <span class="tag tag-h">Item Name*</span>
+        <span class="tag tag-h">Qty*</span>
+        <span class="tag" style="background:#334155;">Composition (Salt)</span>
+        <span class="tag" style="background:#334155;">Strength</span>
+        <span class="tag" style="background:#334155;">Batch#</span>
+        <span class="tag" style="background:#334155;">Expiry Date (YYYY-MM / YYYY-MM-DD)</span>
+        <span class="tag tag-h1">Rack | Shelf | Box (ZiGo)</span>
+      </div>
+      <div style="margin-top:4px;">
+        <b style="color:#fbbf24;">2. Owner Watchlist CSV Columns (Zero Hardcoding):</b>
+        <span class="tag tag-x">Medicine Name (Exact/Partial)</span>
+        <span class="tag tag-x">Composition / Salt Combination</span>
+        <span class="tag" style="background:#334155;">Owner Note</span>
+      </div>
+    </div>
   </div>
+
 
   <!-- SECTION 1B & 1C: INVENTORY SYNC + OWNER WATCHLIST CSV UPLOADER -->
   <div class="grid">
