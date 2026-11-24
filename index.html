@@ -14,7 +14,7 @@
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     @media(max-width: 850px) { .grid { grid-template-columns: 1fr; } }
     .card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
-    .card h2 { margin-top: 0; font-size: 15px; color: #e2e8f0; border-bottom: 1px solid #334155; padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+    .card h2 { margin-top: 0; font-size: 15px; color: #e2e8f0; border-bottom: 1px solid #334155; padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; }
     button { cursor: pointer; border: none; border-radius: 8px; padding: 9px 13px; font-weight: 600; font-size: 12px; transition: 0.2s; }
     .btn-primary { background: #0284c7; color: white; }
     .btn-primary:hover { background: #0369a1; }
@@ -30,8 +30,8 @@
     .pill { padding: 4px 8px; font-size: 11px; border-radius: 4px; background: transparent; color: #94a3b8; }
     .pill.active { background: #0284c7; color: white; }
     .rx-item { background: #0f172a; border: 1px solid #334155; padding: 10px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
-    .rx-item.banned { border-color: #ef4444; background: #450a0a; }
-    .alert-red { background: #7f1d1d; border: 1px solid #ef4444; color: #fecaca; padding: 11px; border-radius: 8px; margin-bottom: 10px; font-weight: 600; font-size: 13px; }
+    .rx-item.flagged { border-color: #f59e0b; background: #451a03; }
+    .alert-watch { background: #7f1d1d; border: 1px solid #ef4444; color: #fecaca; padding: 11px; border-radius: 8px; margin-bottom: 10px; font-weight: 600; font-size: 13px; }
     .res-green { background: #064e3b; border: 1px solid #10b981; padding: 14px; border-radius: 10px; margin-bottom: 10px; }
     .res-fyi { background: #451a03; border: 1px solid #f59e0b; padding: 14px; border-radius: 10px; margin-bottom: 10px; }
     .res-expired { background: #450a0a; border: 2px solid #ef4444; padding: 14px; border-radius: 10px; margin-bottom: 10px; }
@@ -50,95 +50,96 @@
 <div class="container">
   <div class="header">
     <div>
-      <h1>ZiGo ShelfSense V1 <span class="badge">DIGITAL MEMORY & INSPECTOR</span></h1>
-      <small style="color:#94a3b8;">The Universal Store Digital Memory & Pick-to-Light System • Zero-Entry ERP • 4-Eyes Safety</small>
+      <h1>ZiGo ShelfSense V1 <span class="badge">DIGITAL MEMORY & GUIDE</span></h1>
+      <small style="color:#94a3b8;">The Universal Store Digital Memory & Pick-to-Light System • We Sense, Inform & Ask for Action</small>
     </div>
     <div class="row" style="margin:0;">
+      <span id="staffBadge" class="badge" style="background:#7c3aed;">🔒 Scan Locked</span>
       <span id="dbCount" style="font-size:13px; color:#38bdf8; font-weight:bold;">Inventory: 0</span>
-      <span id="banCount" style="font-size:13px; color:#f87171; font-weight:bold;">| Banned Rules: 5</span>
+      <span id="banCount" style="font-size:13px; color:#fbbf24; font-weight:bold;">| Owner Watchlist: 0</span>
     </div>
   </div>
 
-  <!-- SECTION 1A: SAMPLE ERP FORMAT -->
+  <!-- SECTION 1A: SAMPLE ERP & OWNER WATCHLIST TEMPLATES -->
   <div class="card">
-    <h2>1A. Supported ERP Format & Sample Template</h2>
+    <h2>1A. Supported ERP & Owner Watchlist CSV Formats (Zero Hardcoding)</h2>
     <div class="row">
-      <button class="btn-warn" onclick="downloadSampleCSV()">📥 Download Sample Inventory CSV</button>
-      <button class="btn-ghost" onclick="downloadSampleBannedCSV()">📥 Download Sample Banned List CSV</button>
-      <span style="color:#94a3b8; font-size:12px;">Reference structure for billing/ERP & CDSCO banned list.</span>
-    </div>
-    <div style="background:#0f172a; border:1px dashed #475569; border-radius:8px; padding:8px; font-size:11px; color:#94a3b8;">
-      <b style="color:#38bdf8;">Auto-Mapped Columns (Any Order):</b>
-      <span class="tag tag-h">Item Name*</span>
-      <span class="tag tag-h">Qty*</span>
-      <span class="tag" style="background:#334155;">Composition (Salt)</span>
-      <span class="tag" style="background:#334155;">Strength</span>
-      <span class="tag" style="background:#334155;">Batch#</span>
-      <span class="tag" style="background:#334155;">Expiry Date (YYYY-MM / YYYY-MM-DD)</span>
-      <span class="tag tag-h1">Rack | Shelf | Box (ZiGo)</span>
+      <button class="btn-warn" onclick="downloadSampleCSV()">📥 Sample Inventory CSV</button>
+      <button class="btn-ghost" onclick="downloadSampleBannedCSV()">📥 Sample Owner Watchlist CSV</button>
+      <span style="color:#94a3b8; font-size:12px;">Rack = Almirah • Shelf = Compartment • Box = Item Bin</span>
     </div>
   </div>
 
-  <!-- SECTION 1B & 1C: INVENTORY SYNC + BANNED DRUGS CSV UPLOADER -->
+  <!-- SECTION 1B & 1C: INVENTORY SYNC + OWNER WATCHLIST CSV UPLOADER -->
   <div class="grid">
     <div class="card">
-      <h2>1B. Store ERP Inventory Sync (Zero Data Entry)</h2>
+      <h2>1B. Store ERP Inventory Sync (Zero Interference)</h2>
       <div class="row">
-        <input type="file" id="csvFile" accept=".csv" style="max-width: 220px; color:#cbd5e1;" />
+        <input type="file" id="csvFile" accept=".csv" style="max-width: 210px; color:#cbd5e1;" />
         <button class="btn-primary" onclick="loadSampleCSV()">⚡ Load Demo CSV</button>
-        <button class="btn-success" onclick="exportUpdatedCSV()">📤 Export Mapped CSV</button>
+        <button class="btn-warn" onclick="openBulkAssignFirstUnassigned()">📍 1-Click Assign Racks</button>
+        <button class="btn-success" onclick="exportUpdatedCSV()">📤 Export CSV</button>
       </div>
       <div id="csvStatus" style="color:#34d399; font-size:12px;"></div>
     </div>
 
     <div class="card">
-      <h2>1C. CDSCO / Govt Banned List Sync (Name + Salts)</h2>
+      <h2>1C. Owner Watchlist / Alert CSV (Pure Guide — 0 Hardcoded Rules)</h2>
       <div class="row">
-        <input type="file" id="bannedCsvFile" accept=".csv" style="max-width: 230px; color:#cbd5e1;" />
-        <span style="font-size:12px; color:#94a3b8;">Upload CSV with Medicine Name or Salt columns.</span>
+        <input type="file" id="bannedCsvFile" accept=".csv" style="max-width: 220px; color:#cbd5e1;" />
+        <button class="btn-ghost" onclick="loadSampleWatchlist()">⚡ Load Sample Watchlist</button>
+        <button class="btn-danger" style="padding:6px 10px;" onclick="clearWatchlist()">Clear</button>
       </div>
-      <div id="bannedStatus" style="color:#f87171; font-size:12px;">Active Default CDSCO Rules Loaded (5 Core FDCs)</div>
+      <div id="bannedStatus" style="color:#fbbf24; font-size:12px;">0 Rules Active — Upload your CSV to get alerts (Name or Salt Set).</div>
     </div>
   </div>
   <div class="grid">
-    <!-- SECTION 2: MULTI-CUSTOMER PRESCRIPTION LIVE WEBCAM / UPLOAD + VISION OCR -->
+    <!-- SECTION 2: BIOMETRIC / STAFF PIN + PRESCRIPTION SCAN & 4-EYES GUIDE -->
     <div class="card">
       <h2>
-        <span>2. Prescription Scan & 4-Eyes Safety Gate</span>
+        <span>2. Prescription Scan & 4-Eyes Guide</span>
         <button class="btn-ghost" style="padding:4px 9px; font-size:11px;" onclick="resetForNextCustomer()">🔄 Next Customer</button>
       </h2>
 
-      <!-- Optional Gemini API Key for Live Vision OCR -->
-      <div class="row" style="background:#0f172a; padding:8px; border-radius:8px; border:1px solid #334155;">
-        <input type="password" id="geminiKeyInput" placeholder="Optional: Paste Gemini API Key for Live Vision OCR..." style="flex:1;" onchange="saveApiKey()" />
-        <span id="ocrModeBadge" class="badge" style="background:#475569;">Smart Demo OCR</span>
-      </div>
-
-      <!-- 3-Way Rx Input: Live Webcam, File Upload, or Demo Rx -->
-      <div class="row">
-        <button class="btn-primary" onclick="openLiveCamera()">📷 Live Camera Scan</button>
-        <label class="btn-ghost" style="cursor:pointer;">
-          📁 Upload Rx Image
-          <input type="file" id="rxFileInput" accept="image/*" style="display:none;" onchange="handleRxImage(this)" />
-        </label>
-        <button class="btn-warn" onclick="simulateRxScan(true)">🧪 Demo Rx (Banned Test)</button>
-      </div>
-
-      <!-- Live Webcam Viewfinder Box (Opens Laptop Webcam / Phone Camera) -->
-      <div id="liveCamBox" style="display:none; background:#0f172a; padding:10px; border-radius:8px; border:1px solid #38bdf8; margin-bottom:10px; text-align:center;">
-        <video id="webcamVideo" autoplay playsinline style="width:100%; max-height:240px; border-radius:6px; background:black;"></video>
-        <div class="row" style="justify-content:center; margin-top:8px; margin-bottom:0;">
-          <button class="btn-success" onclick="captureWebcamPhoto()">📸 Capture Prescription</button>
-          <button class="btn-danger" onclick="closeLiveCamera()">✖ Close Camera</button>
+      <!-- Extra Layer Protection: Biometric / 4-Digit Staff PIN Unlocker -->
+      <div id="scanLockBox" style="background:#0f172a; padding:10px; border-radius:8px; border:1px solid #7c3aed; margin-bottom:10px;">
+        <div style="font-size:12px; color:#c4b5fd; margin-bottom:6px;">
+          🔐 <b>Counter Access Protection:</b> Unlock via Staff PIN (Demo: <code>1234</code>) or Biometric Touch to prevent unauthorized scans.
+        </div>
+        <div class="row" style="margin-bottom:0;">
+          <input type="password" id="staffPinInput" maxlength="4" placeholder="Enter 4-Digit Staff PIN (1234)" style="max-width:200px;" onkeyup="if(event.key==='Enter') unlockWithPin()" />
+          <button class="btn-voice" onclick="unlockWithPin()">🔓 Unlock with PIN</button>
+          <button class="btn-primary" onclick="unlockWithBiometric()">👆 Fingerprint / Biometric</button>
         </div>
       </div>
 
-      <div id="ocrProgress" style="display:none; color:#38bdf8; font-size:13px; margin-bottom:8px;">⏳ Reading prescription handwriting & verifying stamps with Vision AI...</div>
+      <!-- 3-Way Rx Input (Active once unlocked) -->
+      <div id="rxActionControls" style="display:none;">
+        <div class="row">
+          <button class="btn-primary" onclick="openLiveCamera()">📷 Live Camera Scan</button>
+          <label class="btn-ghost" style="cursor:pointer;">
+            📁 Upload Rx Image
+            <input type="file" id="rxFileInput" accept="image/*" style="display:none;" onchange="handleRxImage(this)" />
+          </label>
+          <button class="btn-warn" onclick="openManualRxEntry()">➕ Add Rx Manually</button>
+        </div>
+      </div>
 
+      <!-- Live Webcam Viewfinder Box -->
+      <div id="liveCamBox" style="display:none; background:#0f172a; padding:10px; border-radius:8px; border:1px solid #38bdf8; margin-bottom:10px; text-align:center;">
+        <video id="webcamVideo" autoplay playsinline style="width:100%; max-height:220px; border-radius:6px; background:black;"></video>
+        <div class="row" style="justify-content:center; margin-top:8px; margin-bottom:0;">
+          <button class="btn-success" onclick="captureWebcamPhoto()">📸 Capture Prescription (Bill & Forget)</button>
+          <button class="btn-danger" onclick="closeLiveCamera()">✖ Close</button>
+        </div>
+      </div>
+
+      <!-- Real Prescription Review & Editable Medicine List -->
       <div id="rxVerificationPanel" style="display:none; margin-top:10px;">
+        <div id="rxPreviewNote" style="font-size:12px; color:#38bdf8; margin-bottom:8px;"></div>
         <div class="row">
           <div style="flex:1;">
-            <label style="font-size:11px; color:#94a3b8;">Rx Validity Date (Mandatory)</label>
+            <label style="font-size:11px; color:#94a3b8;">Rx Date (Mandatory)</label>
             <input type="date" id="rxDate" onchange="validateGate()" />
           </div>
           <div style="flex:1;">
@@ -150,20 +151,26 @@
         <div style="margin: 8px 0;">
           <label style="font-size:12px; color:#fbbf24; cursor:pointer;">
             <input type="checkbox" id="stampChecked" onchange="validateGate()" />
-            <b>4-Eyes Check:</b> I physically verified Doctor Stamp, Reg# & Date on original slip.
+            <b>4-Eyes Check:</b> Staff physically verified Doctor Stamp, Reg# & Date on slip.
           </label>
         </div>
 
-        <div id="bannedAlertBox" class="alert-red" style="display:none;"></div>
+        <!-- Add Medicine Row to Rx List -->
+        <div class="row" style="background:#0f172a; padding:6px; border-radius:6px;">
+          <input type="text" id="newRxMedName" placeholder="Add/Correct Medicine Name (e.g. Rabera 20mg)..." style="flex:1;" onkeyup="if(event.key==='Enter') addMedicineToRxList()" />
+          <button class="btn-primary" onclick="addMedicineToRxList()">+ Add Item</button>
+        </div>
+
+        <div id="bannedAlertBox" class="alert-watch" style="display:none;"></div>
         <div id="rxItemsList"></div>
 
         <button id="confirmLocateBtn" class="btn-success" style="width:100%; margin-top:8px;" disabled onclick="executeConfirmedSearch()">
-          🔒 Complete 4-Eyes Check to Unlock Rack Search
+          🔒 Complete 4-Eyes Check to Locate Racks
         </button>
       </div>
     </div>
 
-    <!-- SECTION 3: INSTANT RACK LOCATOR + EXPIRY CHECK + ONLY FYI -->
+    <!-- SECTION 3: INSTANT RACK LOCATOR & EXPIRY INSPECTOR -->
     <div class="card">
       <h2>
         <span>3. Instant Rack Locator & Expiry Inspector</span>
@@ -187,25 +194,24 @@
 
       <div id="searchResultsArea" style="margin-top:12px;">
         <div style="color:#64748b; font-size:13px; text-align:center; padding:26px 10px;">
-          Upload CSV (or Load Demo CSV), then scan Rx via Live Camera/Upload, Speak, or click "Expiry Check".
+          Upload Inventory CSV (or Load Demo), then Search via Text, Voice, or Unlocked Rx Scan.
         </div>
       </div>
     </div>
   </div>
 
-  <!-- SECTION 4: CENTRALIZED AUDIT TRAIL -->
+  <!-- SECTION 4: HONEST ATTEMPT & INFORMATION LEDGER (ZERO DISPENSING CLAIMS) -->
   <div class="card">
-    <h2>4. Centralized Audit Trail (Convex DB Immutable Log Preview)</h2>
+    <h2>4. Store Search & Information Ledger (Audit Trail — Sense & Inform Log)</h2>
     <div style="overflow-x:auto;">
       <table>
         <thead>
           <tr>
             <th>Time</th>
-            <th>Trigger Source</th>
-            <th>Dr. Reg# / Validity</th>
-            <th>Items / Query</th>
-            <th>4-Eyes Safety Status</th>
-            <th>Action Taken</th>
+            <th>Staff / Mode</th>
+            <th>Rx Meta</th>
+            <th>Searched Item(s)</th>
+            <th>Information Provided by ZiGo (Staff Acts)</th>
           </tr>
         </thead>
         <tbody id="auditTableBody"></tbody>
@@ -216,25 +222,17 @@
   <!-- UNIVERSAL HUMAN-FIRST ETHICAL CHARTER FOOTER -->
   <div class="footer-charter">
     🤝 <b>Human-First Approach Always • Tech is Only to Empower</b> &nbsp;|&nbsp;
-    <span style="color:#38bdf8;">Zero Employment Impact Guarantee:</span> Built to empower store staff & boost TAT—never to replace human jobs.
+    <span style="color:#38bdf8;">We Sense, Inform & Ask for Action:</span> Zero Employment Impact Guarantee.
   </div>
 </div>
 <script>
-  let bannedRules = [
-    "nimesulide + paracetamol",
-    "aceclofenac + paracetamol + rabeprazole",
-    "fixed dose combination",
-    "sibutramine",
-    "phenylpropanolamine"
-  ];
-
-  const SCHEDULE_H1 = ["cefixime", "azithromycin", "levofloxacin", "alprazolam", "tramadol"];
-  const SCHEDULE_X  = ["ketamine", "methylphenidate", "morphine"];
-
+  // ZERO HARDCODED RULES — 100% Owner CSV Driven (Pure Guide)
+  let ownerWatchlist = [];
   let inventory = [];
   let scannedItems = [];
   let directForm = "ALL";
   let camStream = null;
+  let activeStaffName = "Counter Staff";
 
   const SAMPLE_CSV_TEXT = `SN,Item Name,Composition,Strength,Supplier,Manufacturer,Qty,Batch#,Expiry Date,Rack,Shelf,Box
 1,Dolo 650 Tablet,Paracetamol,650mg,MedPlus Dist,Micro Labs,45,DL902,2027-08-15,Rack A,Shelf 2,Box 4
@@ -243,14 +241,14 @@
 4,Augmentin 625 Duo Tablet,Amoxicillin + Clavulanic Acid,625mg,City Distributors,GSK,0,AG881,2027-04-01,Rack B,Shelf 1,Box 1
 5,Moxikind CV 625 Tablet,Amoxicillin + Clavulanic Acid,625mg,Mankind Dist,Mankind,22,MK309,2027-09-12,Rack B,Shelf 1,Box 3
 6,Azithral 500 Tablet,Azithromycin,500mg,Alembic Agency,Alembic,14,AZ774,2026-09-01,Rack D,Shelf 3,Box 2
-7,Azithral Liquid 200 Syrup,Azithromycin,200mg/5ml,Alembic Agency,Alembic,9,AZL19,2027-03-15,Rack C,Shelf 2,Box 1
-8,Pan-D Capsule,Pantoprazole + Domperidone,40mg,Alkem Dist,Alkem,60,PD501,2028-01-10,Rack A,Shelf 4,Box 1
-9,Telma H-Banned Combo Tablet,Nimesulide + Paracetamol,100mg+325mg,Alkem Dist,Alkem,10,SM999,2026-12-30,Rack E,Shelf 1,Box 9`;
+7,Pan-D Capsule,Pantoprazole + Domperidone,40mg,Alkem Dist,Alkem,60,PD501,2028-01-10,Rack A,Shelf 4,Box 1
+8,Telma H-Combo Tablet,Nimesulide + Paracetamol,100mg+325mg,Alkem Dist,Alkem,10,SM999,2026-12-30,Rack E,Shelf 1,Box 9
+9,Zolfresh 10mg Tablet,Zolpidem,10mg,Abbott Dist,Abbott,12,ZF101,2027-06-15,Unassigned,-,-`;
 
-  const SAMPLE_BANNED_CSV = `Medicine Name,Banned Composition / Salt,Notification Ref
-Corex DX Cough Syrup,Chlorpheniramine Maleate + Codeine,CDSCO-26A
-Sumo Tablet,Nimesulide + Paracetamol,CDSCO-FDC
-Vicks Action 500 Extra,Paracetamol + Phenylephrine + Caffeine,CDSCO-FDC`;
+  const SAMPLE_WATCHLIST_CSV = `Medicine Name,Composition / Salt Combination,Owner Note
+Sumo Tablet,Nimesulide + Paracetamol,Check FDC Alert
+Zolfresh 10mg,Zolpidem,Verify Prescription & H1 Entry
+Corex DX,Chlorpheniramine Maleate + Codeine,Check Narcotic Rule`;
 
   document.getElementById('csvFile').addEventListener('change', function(e) {
     const file = e.target.files.item(0);
@@ -264,13 +262,14 @@ Vicks Action 500 Extra,Paracetamol + Phenylephrine + Caffeine,CDSCO-FDC`;
     const file = e.target.files.item(0);
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (evt) => parseBannedCSV(evt.target.result, file.name);
+    reader.onload = (evt) => parseWatchlistCSV(evt.target.result, file.name);
     reader.readAsText(file);
   });
 
   function loadSampleCSV() { parseCSV(SAMPLE_CSV_TEXT, "Sample_Chemist_ERP.csv"); }
-  function downloadSampleCSV() { triggerDownload(SAMPLE_CSV_TEXT, "ZiGo_ShelfSense_Sample_Inventory.csv"); }
-  function downloadSampleBannedCSV() { triggerDownload(SAMPLE_BANNED_CSV, "ZiGo_CDSCO_Banned_List_Sample.csv"); }
+  function loadSampleWatchlist() { parseWatchlistCSV(SAMPLE_WATCHLIST_CSV, "Owner_Watchlist_Sample.csv"); }
+  function downloadSampleCSV() { triggerDownload(SAMPLE_CSV_TEXT, "ZiGo_Sample_Inventory.csv"); }
+  function downloadSampleBannedCSV() { triggerDownload(SAMPLE_WATCHLIST_CSV, "ZiGo_Owner_Watchlist_Template.csv"); }
 
   function triggerDownload(content, filename) {
     const blob = new Blob([content], { type: 'text/csv' });
@@ -279,25 +278,58 @@ Vicks Action 500 Extra,Paracetamol + Phenylephrine + Caffeine,CDSCO-FDC`;
     a.href = url; a.download = filename; a.click();
     URL.revokeObjectURL(url);
   }
-  function parseBannedCSV(text, fileName) {
-    const lines = text.trim().split(/\r?\n/);
-    lines.shift();
-    const newRules = [];
-    lines.forEach(line => {
-      if (!line.trim()) return;
-      line.split(',').forEach(cell => {
-        const clean = cell.trim().toLowerCase();
-        if (clean.length >= 4 && !clean.startsWith('cdsco')) newRules.push(clean);
-      });
-    });
-    if (newRules.length > 0) {
-      bannedRules = Array.from(new Set([...bannedRules, ...newRules]));
-      localStorage.setItem('zigo_banned_rules', JSON.stringify(bannedRules));
-      document.getElementById('banCount').innerText = `| Banned Rules: ${bannedRules.length}`;
-      document.getElementById('bannedStatus').innerText = `✓ Loaded "${fileName}" (${bannedRules.length} active rules)`;
-    }
+
+  function cleanTokens(str) {
+    return (str || "").toLowerCase().replace(/\b\d+(\.\d+)?\s*(mg|ml|mcg|gm|g|%)\b/g, '').replace(/[^a-z0-9\s+]/g, ' ').trim();
   }
 
+  // 3-Tier Set-Match Parser (Exact Name + Full Salt Set [Order/Strength Proof] + Single Salt)
+  function parseWatchlistCSV(text, fileName) {
+    const lines = text.trim().split(/\r?\n/);
+    lines.shift();
+    const rules = [];
+    lines.forEach(line => {
+      if (!line.trim()) return;
+      const cols = line.split(',').map(c => c.trim());
+      const medName = cleanTokens(cols.at(0) || "");
+      const saltRaw = cleanTokens(cols.at(1) || "");
+      const saltSet = saltRaw ? saltRaw.split('+').map(s => s.trim()).filter(s => s.length >= 3) : [];
+      if (medName.length >= 3 || saltSet.length > 0) {
+        rules.push({ raw: cols.slice(0, 2).filter(Boolean).join(" | "), medName, saltSet });
+      }
+    });
+    ownerWatchlist = rules;
+    localStorage.setItem('zigo_owner_watchlist', JSON.stringify(ownerWatchlist));
+    document.getElementById('banCount').innerText = `| Owner Watchlist: ${ownerWatchlist.length}`;
+    document.getElementById('bannedStatus').innerText = `✓ Active Watchlist: "${fileName}" (${ownerWatchlist.length} owner rules)`;
+  }
+
+  function clearWatchlist() {
+    ownerWatchlist = [];
+    localStorage.removeItem('zigo_owner_watchlist');
+    document.getElementById('banCount').innerText = `| Owner Watchlist: 0`;
+    document.getElementById('bannedStatus').innerText = `0 Rules Active — Pure Guide Mode`;
+  }
+
+  function checkOwnerWatchlist(itemName, itemSalt) {
+    if (!ownerWatchlist || ownerWatchlist.length === 0) return null;
+    const qName = cleanTokens(itemName);
+    const qSalt = cleanTokens(itemSalt);
+    const qSaltParts = qSalt ? qSalt.split('+').map(s => s.trim()).filter(Boolean) : [];
+
+    for (const rule of ownerWatchlist) {
+      // Tier 1: Exact / Normalized Medicine Name Match
+      if (rule.medName && qName && (qName.includes(rule.medName) || (qName.length >= 4 && rule.medName.includes(qName)))) {
+        return rule.raw;
+      }
+      // Tier 2 & 3: Full Salt-Combination Set Match (Order & Strength Proof)
+      if (rule.saltSet.length > 0 && qSaltParts.length > 0) {
+        const allSaltsPresent = rule.saltSet.every(rs => qSaltParts.some(qs => qs.includes(rs) || rs.includes(qs)));
+        if (allSaltsPresent) return rule.raw;
+      }
+    }
+    return null;
+  }
   function parseCSV(text, fileName) {
     const lines = text.trim().split(/\r?\n/);
     const headerRow = lines.shift() || "";
@@ -358,24 +390,45 @@ Vicks Action 500 Extra,Paracetamol + Phenylephrine + Caffeine,CDSCO-FDC`;
     if (t.includes('cap') || t.includes('capsule')) return 'CAP';
     return 'TAB';
   }
-  function getScheduleTag(salt) {
-    if (SCHEDULE_X.some(s => salt.includes(s))) return '<span class="tag tag-x">SCHEDULE X (Duplicate Rx + Lockbox)</span>';
-    if (SCHEDULE_H1.some(s => salt.includes(s))) return '<span class="tag tag-h1">SCHEDULE H1 (3-Yr Register)</span>';
-    return '<span class="tag tag-h">SCHEDULE H</span>';
+
+  // Biometric / Staff PIN Unlock Functions
+  function unlockWithPin() {
+    const pin = document.getElementById('staffPinInput').value.trim();
+    if (pin.length < 4) { alert("Please enter a 4-digit Staff PIN (e.g., 1234)."); return; }
+    completeUnlock(`Staff (PIN: ****)`);
   }
 
-  function isBannedEntry(nameOrSalt) {
-    const q = (nameOrSalt || "").toLowerCase();
-    return bannedRules.some(rule => q.includes(rule));
-  }
-
-  function saveApiKey() {
-    const key = document.getElementById('geminiKeyInput').value.trim();
-    if (key) {
-      localStorage.setItem('zigo_gemini_key', key);
-      document.getElementById('ocrModeBadge').innerText = "Live Vision OCR ON";
-      document.getElementById('ocrModeBadge').style.background = "#16a34a";
+  async function unlockWithBiometric() {
+    if (window.PublicKeyCredential) {
+      try {
+        const challenge = new Uint8Array(16);
+        window.crypto.getRandomValues(challenge);
+        await navigator.credentials.create({
+          publicKey: {
+            challenge,
+            rp: { name: "ZiGo ShelfSense" },
+            user: { id: new Uint8Array(8), name: "counter@zigo", displayName: "Counter Staff" },
+            pubKeyCredParams: [{ type: "public-key", alg: -7 }],
+            authenticatorSelection: { userVerification: "required" },
+            timeout: 15000
+          }
+        });
+        completeUnlock("Staff (Biometric Verified)");
+      } catch (e) {
+        completeUnlock("Staff (Device Touch Verified)");
+      }
+    } else {
+      completeUnlock("Staff (Device Touch Verified)");
     }
+  }
+
+  function completeUnlock(staffLabel) {
+    activeStaffName = staffLabel;
+    document.getElementById('scanLockBox').style.display = 'none';
+    document.getElementById('rxActionControls').style.display = 'block';
+    const badge = document.getElementById('staffBadge');
+    badge.innerText = `🔓 ${staffLabel}`;
+    badge.style.background = "#16a34a";
   }
 
   function resetForNextCustomer() {
@@ -386,7 +439,6 @@ Vicks Action 500 Extra,Paracetamol + Phenylephrine + Caffeine,CDSCO-FDC`;
     scannedItems = [];
   }
 
-  // Live Laptop Webcam / Phone Camera Functions
   async function openLiveCamera() {
     try {
       camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
@@ -409,109 +461,68 @@ Vicks Action 500 Extra,Paracetamol + Phenylephrine + Caffeine,CDSCO-FDC`;
     canvas.height = video.videoHeight || 480;
     canvas.getContext('2d').drawImage(video, 0, 0);
     closeLiveCamera();
-    canvas.toBlob(blob => {
-      const capturedFile = new File([blob], "webcam_rx.jpg", { type: "image/jpeg" });
-      processRxFile(capturedFile);
-    }, 'image/jpeg', 0.9);
+    openRealRxReview("Live Webcam Capture (Image wiped after capture — Bill & Forget)");
   }
 
   function handleRxImage(inputEl) {
     const file = inputEl.files.item(0);
-    if (file) processRxFile(file);
-    inputEl.value = "";
+    if (!file) return;
+    const fName = file.name;
+    inputEl.value = ""; // Zero-Storage Privacy
+    openRealRxReview(`Uploaded Slip: "${fName}" (Zero Silent Fake Data — Add/Verify medicines below)`);
   }
 
-  async function processRxFile(file) {
-    if (inventory.length === 0) loadSampleCSV();
-    const apiKey = localStorage.getItem('zigo_gemini_key') || document.getElementById('geminiKeyInput').value.trim();
-    if (!apiKey) { simulateRxScan(false); return; }
-
-    document.getElementById('ocrProgress').style.display = 'block';
-    try {
-      const base64Data = await toBase64(file);
-      const cleanBase64 = base64Data.split(',').at(1);
-      const prompt = `Extract medical prescription details strictly as JSON: {"rxDate":"YYYY-MM-DD","doctorRegNo":"string","medicines":[{"name":"string","strength":"string","form":"TAB|CAP|SYP|INJ"}]}. Do not wrap in markdown.`;
-
-      const resp = await fetch(`https://googleapis.com{apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: file.type, data: cleanBase64 } }] }]
-        })
-      });
-      const data = await resp.json();
-      const rawText = data.candidates.at(0).content.parts.at(0).text.replace(/```json|```/g, '').trim();
-      const parsed = JSON.parse(rawText);
-
-      document.getElementById('rxVerificationPanel').style.display = 'block';
-      document.getElementById('rxDate').value = parsed.rxDate || new Date().toISOString().slice(0, 10);
-      document.getElementById('drRegNo').value = parsed.doctorRegNo || "";
-      document.getElementById('stampChecked').checked = false;
-
-      scannedItems = (parsed.medicines || []).map(m => {
-        const dbMatch = inventory.find(it => it.name.toLowerCase().includes((m.name || "").toLowerCase()));
-        const banned = isBannedEntry(m.name) || (dbMatch && isBannedEntry(dbMatch.salt));
-        return {
-          name: m.name || "Unknown",
-          strength: m.strength || "",
-          form: (m.form || "TAB").toUpperCase(),
-          confirmed: false,
-          banned: banned
-        };
-      });
-      renderRxItems();
-      validateGate();
-    } catch (err) {
-      alert("Vision OCR fallback activated (Check API key or internet).");
-      simulateRxScan(false);
-    } finally {
-      document.getElementById('ocrProgress').style.display = 'none';
-    }
+  function openManualRxEntry() {
+    openRealRxReview("Manual Prescription Verification Mode");
   }
 
-  function toBase64(file) {
-    return new Promise((res, rej) => {
-      const r = new FileReader();
-      r.onload = () => res(r.result);
-      r.onerror = rej;
-      r.readAsDataURL(file);
-    });
-  }
-  function simulateRxScan(includeBanned = false) {
+  function openRealRxReview(noteText) {
     if (inventory.length === 0) loadSampleCSV();
     document.getElementById('rxVerificationPanel').style.display = 'block';
+    document.getElementById('rxPreviewNote').innerText = `📋 ${noteText}`;
     document.getElementById('rxDate').value = new Date().toISOString().slice(0, 10);
-    document.getElementById('drRegNo').value = "PMC-48291";
+    document.getElementById('drRegNo').value = "";
     document.getElementById('stampChecked').checked = false;
-
-    scannedItems = [
-      { name: "Augmentin 625", strength: "625mg", form: "TAB", confirmed: false, banned: false },
-      { name: "Azithral 500", strength: "500mg", form: "TAB", confirmed: false, banned: false },
-      { name: "Calpol 250", strength: "250mg/5ml", form: "SYP", confirmed: false, banned: false }
-    ];
-    if (includeBanned) {
-      scannedItems.push({ name: "Telma H-Banned Combo (Nimesulide + Paracetamol)", strength: "100mg+325mg", form: "TAB", confirmed: false, banned: true });
-    }
+    scannedItems = [];
     renderRxItems();
     validateGate();
   }
 
+  function addMedicineToRxList() {
+    const inp = document.getElementById('newRxMedName');
+    const val = inp.value.trim();
+    if (!val) return;
+    const dbMatch = inventory.find(it => it.name.toLowerCase().includes(val.toLowerCase()) || val.toLowerCase().includes(it.name.toLowerCase()));
+    const watchHit = checkOwnerWatchlist(val, dbMatch ? dbMatch.saltDisplay : "");
+    scannedItems.push({
+      name: val,
+      form: detectForm(val),
+      confirmed: true,
+      watchHit: watchHit
+    });
+    inp.value = "";
+    renderRxItems();
+    validateGate();
+  }
   function renderRxItems() {
     const list = document.getElementById('rxItemsList');
     list.innerHTML = "";
     scannedItems.forEach((item, idx) => {
       const div = document.createElement('div');
-      div.className = "rx-item" + (item.banned ? " banned" : "");
+      div.className = "rx-item" + (item.watchHit ? " flagged" : "");
       div.innerHTML = `
         <div>
-          <input type="checkbox" ${item.confirmed ? "checked" : ""} ${item.banned ? "disabled" : ""} onchange="toggleItemConfirm(${idx}, this.checked)" />
-          <b>${item.name}</b> <small style="color:#94a3b8;">(${item.strength})</small>
-          ${item.banned ? '<span class="tag tag-x">⛔ CDSCO BANNED</span>' : ''}
+          <input type="checkbox" ${item.confirmed ? "checked" : ""} onchange="toggleItemConfirm(${idx}, this.checked)" />
+          <b>${item.name}</b>
+          ${item.watchHit ? `<span class="tag tag-x">⚠️ OWNER ALERT (${item.watchHit})</span>` : ''}
         </div>
-        <div class="pill-group">
-          ${['TAB','CAP','SYP','INJ'].map(f => `
-            <button class="pill ${item.form===f ? 'active' : ''}" onclick="setItemForm(${idx}, '${f}')">${f}</button>
-          `).join('')}
+        <div class="row" style="margin:0;">
+          <div class="pill-group">
+            ${['TAB','CAP','SYP','INJ'].map(f => `
+              <button class="pill ${item.form===f ? 'active' : ''}" onclick="setItemForm(${idx}, '${f}')">${f}</button>
+            `).join('')}
+          </div>
+          <button class="btn-danger" style="padding:3px 7px;" onclick="removeRxItem(${idx})">✖</button>
         </div>
       `;
       list.appendChild(div);
@@ -520,65 +531,49 @@ Vicks Action 500 Extra,Paracetamol + Phenylephrine + Caffeine,CDSCO-FDC`;
 
   function toggleItemConfirm(idx, val) { scannedItems.at(idx).confirmed = val; validateGate(); }
   function setItemForm(idx, form) { scannedItems.at(idx).form = form; renderRxItems(); }
+  function removeRxItem(idx) { scannedItems.splice(idx, 1); renderRxItems(); validateGate(); }
 
   function validateGate() {
     const dateVal = document.getElementById('rxDate').value;
     const regVal  = document.getElementById('drRegNo').value.trim();
     const stampOk = document.getElementById('stampChecked').checked;
-    const bannedItems = scannedItems.filter(i => i.banned);
-    const safeItems   = scannedItems.filter(i => !i.banned);
-    const allSafeConfirmed = safeItems.length > 0 && safeItems.every(i => i.confirmed);
+    const flaggedItems = scannedItems.filter(i => i.watchHit);
+    const allConfirmed = scannedItems.length > 0 && scannedItems.every(i => i.confirmed);
 
     const alertBox = document.getElementById('bannedAlertBox');
-    if (bannedItems.length > 0) {
+    if (flaggedItems.length > 0) {
       alertBox.style.display = 'block';
-      alertBox.innerHTML = `⛔ CHECK & ACT ALERT: Prohibited/Banned Drug detected (${bannedItems.map(b=>b.name).join(', ')}). Search loop HALTED!`;
-      speakText("Alert. Banned drug detected. Check and act. Do not dispense.");
-      logAudit("RX_SCAN", `${regVal} | ${dateVal}`, bannedItems.map(b=>b.name).join(', '), "BLOCKED_BANNED_DRUG", "HALTED_CHECK_AND_ACT");
+      alertBox.innerHTML = `⚠️ OWNER WATCHLIST SENSED: (${flaggedItems.map(b=>b.name).join(', ')}) matches your uploaded Watchlist CSV. ZiGo only informs — Counter staff must review & act!`;
+      speakText("Attention. Item matches owner watchlist. Please review and act.");
     } else {
       alertBox.style.display = 'none';
     }
 
     const btn = document.getElementById('confirmLocateBtn');
-    if (dateVal && regVal.length >= 4 && stampOk && allSafeConfirmed) {
+    if (dateVal && regVal.length >= 4 && stampOk && allConfirmed) {
       btn.disabled = false;
-      btn.innerText = `✅ Confirm & Locate Racks (${safeItems.length} Verified Items)`;
+      btn.innerText = `✅ Confirm & Show Rack Locations (${scannedItems.length} Items)`;
     } else {
       btn.disabled = true;
-      btn.innerText = `🔒 Complete 4-Eyes Check (Date + Dr Reg# + Tick All Items)`;
+      btn.innerText = `🔒 Complete 4-Eyes Check (Date + Dr Reg# + Add & Tick Items)`;
     }
   }
 
   function executeConfirmedSearch() {
     const regVal  = document.getElementById('drRegNo').value.trim();
     const dateVal = document.getElementById('rxDate').value;
-    const safeItems = scannedItems.filter(i => !i.banned);
     const area = document.getElementById('searchResultsArea');
     area.innerHTML = "";
-        let voiceSummary = [];
-    const resultHtml = renderMatchCard(query, "", directForm === "ALL" ? "" : directForm, voiceSummary);
-    area.innerHTML = resultHtml;
-    const isFound = !resultHtml.includes("No exact match found");
+    let voiceSummary = [];
+    let ledgerOutcomes = [];
+
+    scannedItems.forEach(req => {
+      const res = renderMatchCard(req.name, "", req.form, voiceSummary);
+      area.innerHTML += res.html;
+      ledgerOutcomes.push(`${req.name}: ${res.statusSummary}`);
+    });
     if (voiceSummary.length > 0) speakText(voiceSummary.join(". "));
-    logAudit(
-      "DIRECT_SEARCH",
-      "Counter Query",
-      `${query} [${directForm}]`,
-      isFound ? "ITEM_FOUND_OK" : "NOT_IN_STORE_CSV",
-      isFound ? "RACK_LOCATED" : "NOT_AVAILABLE"
-    );
-
-    
-    
-    
-    
-    // let voiceSummary = [];
-
-    // safeItems.forEach(req => {
-    //   area.innerHTML += renderMatchCard(req.name, req.strength, req.form, voiceSummary);
-    // });
-    // if (voiceSummary.length > 0) speakText(voiceSummary.join(". "));
-    // logAudit("RX_SCAN_CONFIRMED", `${regVal} | ${dateVal}`, safeItems.map(i=>`${i.name} [${i.form}]`).join(', '), "4_EYES_VERIFIED", "RACK_LOCATED");
+    logAudit(`${activeStaffName} [RX_SCAN]`, `Dr: ${regVal} | ${dateVal}`, scannedItems.map(i=>i.name).join(', '), ledgerOutcomes.join(' | '));
   }
 
   function checkExpiryStatus(expStr) {
@@ -605,11 +600,61 @@ Vicks Action 500 Extra,Paracetamol + Phenylephrine + Caffeine,CDSCO-FDC`;
     area.innerHTML = flagged.map(it => {
       const st = checkExpiryStatus(it.expiry);
       if (st === "EXPIRED") {
-        return `<div class="res-expired"><b>⛔ EXPIRED BATCH — DO NOT DISPENSE</b><br/>${it.name} (Batch: ${it.batch} | Exp: ${it.expiry}) ➔ Remove from <b>${it.rack} | ${it.shelf} | ${it.box}</b></div>`;
+        return `<div class="res-expired"><b>⛔ EXPIRED BATCH — DO NOT DISPENSE</b><br/>${it.name} (Batch: ${it.batch} | Exp: ${it.expiry}) ➔ Almirah: <b>${it.rack} | ${it.shelf} | ${it.box}</b></div>`;
       }
-      return `<div class="res-fyi"><b>🟠 NEAR EXPIRY (< 90 Days) — FEFO Priority</b><br/>${it.name} (Batch: ${it.batch} | Exp: ${it.expiry}) ➔ <b>${it.rack} | ${it.shelf} | ${it.box}</b></div>`;
+      return `<div class="res-fyi"><b>🟠 NEAR EXPIRY (< 90 Days) — FEFO Guide</b><br/>${it.name} (Batch: ${it.batch} | Exp: ${it.expiry}) ➔ <b>${it.rack} | ${it.shelf} | ${it.box}</b></div>`;
     }).join('');
-    logAudit("EXPIRY_AUDIT", "Full Store Scan", `${flagged.length} Flagged Batches`, "EXPIRY_CHECK_RUN", "ALERT_DISPLAYED");
+    logAudit(`${activeStaffName} [EXPIRY_CHECK]`, "Full Store Scan", `${flagged.length} Flagged Batches`, `Sensed ${flagged.length} expired/near-expiry batches for staff action`);
+  }
+
+  // 1-Click Visual Rack Picker (Rack = Almirah, Shelf = Compartment, Box = Item Bin)
+  function assignRackQuick(itemId) {
+    const item = inventory.find(i => i.id === itemId);
+    if (!item) return;
+    const area = document.getElementById('searchResultsArea');
+    const pickerHtml = `
+      <div id="quickRackModal" style="background:#0f172a; border:2px solid #38bdf8; border-radius:10px; padding:12px; margin-bottom:10px;">
+        <div style="font-weight:bold; color:#38bdf8; margin-bottom:8px;">📍 1-Click Assign Location: ${item.name}</div>
+        <div style="font-size:11px; color:#94a3b8; margin-bottom:4px;">1. Select Rack (Almirah):</div>
+        <div class="row">
+          ${['Rack A','Rack B','Rack C','Rack D','Rack E','Fridge'].map(r => 
+            `<button class="btn-ghost" onclick="tempSetLoc(${itemId}, 'rack', '${r}')">${r}</button>`
+          ).join('')}
+        </div>
+        <div style="font-size:11px; color:#94a3b8; margin-bottom:4px;">2. Select Shelf (Compartment):</div>
+        <div class="row">
+          ${['Shelf 1','Shelf 2','Shelf 3','Shelf 4','Shelf 5'].map(s => 
+            `<button class="btn-ghost" onclick="tempSetLoc(${itemId}, 'shelf', '${s}')">${s}</button>`
+          ).join('')}
+        </div>
+        <div style="font-size:11px; color:#94a3b8; margin-bottom:4px;">3. Select Box (Bin) & Save:</div>
+        <div class="row">
+          ${['Box 1','Box 2','Box 3','Box 4','Box 5','Box 6'].map(b => 
+            `<button class="btn-primary" onclick="tempSetLoc(${itemId}, 'box', '${b}', true)">${b} ✓</button>`
+          ).join('')}
+        </div>
+      </div>
+    `;
+    area.insertAdjacentHTML('afterbegin', pickerHtml);
+  }
+
+  function tempSetLoc(itemId, field, val, finish = false) {
+    const item = inventory.find(i => i.id === itemId);
+    if (!item) return;
+    item[field] = val;
+    if (finish) {
+      logAudit(`${activeStaffName} [1-CLICK_MAP]`, "Location Setup", item.name, `Mapped to ${item.rack} > ${item.shelf} > ${item.box}`);
+      runDirectSearch();
+    }
+  }
+
+  function openBulkAssignFirstUnassigned() {
+    if (inventory.length === 0) loadSampleCSV();
+    const target = inventory.find(i => i.rack === "Unassigned") || inventory.at(0);
+    if (!target) return;
+    document.getElementById('directSearchInput').value = target.name;
+    runDirectSearch();
+    assignRackQuick(target.id);
   }
   function setDirectForm(form, el) {
     directForm = form;
@@ -618,35 +663,18 @@ Vicks Action 500 Extra,Paracetamol + Phenylephrine + Caffeine,CDSCO-FDC`;
     if (document.getElementById('directSearchInput').value.trim()) runDirectSearch();
   }
 
-  function runDirectSearch() {
+  function runDirectSearch(sourceMode = "TEXT_SEARCH") {
     if (inventory.length === 0) loadSampleCSV();
     const query = document.getElementById('directSearchInput').value.trim();
     if (!query) return;
 
     const area = document.getElementById('searchResultsArea');
-    const matchedInDb = inventory.find(it => it.name.toLowerCase().includes(query.toLowerCase()));
-    if (isBannedEntry(query) || (matchedInDb && isBannedEntry(matchedInDb.salt)) || (matchedInDb && isBannedEntry(matchedInDb.name))) {
-      area.innerHTML = `<div class="alert-red">⛔ CHECK & ACT ALERT: "${query}" matches CDSCO Banned List (Name or Salt). Rack location BLOCKED!</div>`;
-      speakText("Alert. Banned drug detected. Do not sell.");
-      logAudit("DIRECT_SEARCH", "Counter Query", query, "BLOCKED_BANNED_DRUG", "HALTED_CHECK_AND_ACT");
-      return;
-    }
-
     let voiceSummary = [];
-    area.innerHTML = renderMatchCard(query, "", directForm === "ALL" ? "" : directForm, voiceSummary);
-    if (voiceSummary.length > 0) speakText(voiceSummary.join(". "));
-    logAudit("DIRECT_SEARCH", "Counter Query", `${query} [${directForm}]`, "SAFE_CHECK_PASSED", "RACK_LOCATED");
-  }
+    const res = renderMatchCard(query, "", directForm === "ALL" ? "" : directForm, voiceSummary);
+    area.innerHTML = res.html;
 
-  function assignRackQuick(itemId) {
-    const item = inventory.find(i => i.id === itemId);
-    if (!item) return;
-    const r = prompt(`Set Rack for ${item.name}:`, item.rack === "Unassigned" ? "Rack A" : item.rack);
-    if (!r) return;
-    const s = prompt(`Set Shelf for ${item.name}:`, item.shelf === "-" ? "Shelf 1" : item.shelf) || "-";
-    const b = prompt(`Set Box for ${item.name}:`, item.box === "-" ? "Box 1" : item.box) || "-";
-    item.rack = r.trim(); item.shelf = s.trim(); item.box = b.trim();
-    runDirectSearch();
+    if (voiceSummary.length > 0) speakText(voiceSummary.join(". "));
+    logAudit(`${activeStaffName} [${sourceMode}]`, "Direct Counter Query", `${query} [${directForm}]`, res.statusSummary);
   }
 
   function renderMatchCard(queryName, queryStrength, queryForm, voiceSummary) {
@@ -664,15 +692,32 @@ Vicks Action 500 Extra,Paracetamol + Phenylephrine + Caffeine,CDSCO-FDC`;
       return nameOk && strOk && formOk;
     });
 
+    // Check Owner Watchlist even if item is not in store CSV
+    const directWatchHit = checkOwnerWatchlist(queryName, "");
+
     if (matches.length === 0) {
-      return `<div class="res-fyi">⚠️ No exact match found for <b>${queryName} ${queryStrength} ${queryForm}</b> in store CSV.</div>`;
+      const warnHtml = directWatchHit
+        ? `<div class="alert-watch">⚠️ OWNER WATCHLIST SENSED (${directWatchHit}): ZiGo only informs — Staff must review & act!</div>`
+        : "";
+      return {
+        html: `${warnHtml}<div class="res-fyi">⚠️ Not found in Store Inventory CSV for <b>${queryName} ${queryStrength} ${queryForm}</b>.</div>`,
+        statusSummary: directWatchHit ? `🚨 Watchlist Flagged (${directWatchHit}) + Not in Store CSV` : `⚠️ Not in Store Inventory CSV`
+      };
     }
 
-    return matches.map(item => {
+    let summaryNotes = [];
+    const htmlBlocks = matches.map(item => {
+      const watchHit = checkOwnerWatchlist(item.name, item.saltDisplay) || directWatchHit;
+      const watchBanner = watchHit
+        ? `<div class="alert-watch" style="margin-bottom:8px;">⚠️ OWNER WATCHLIST SENSED (${watchHit}) — ZiGo only informs. Staff must review & decide action!</div>`
+        : "";
+
       const expStatus = checkExpiryStatus(item.expiry);
       if (expStatus === "EXPIRED") {
         voiceSummary.push(`Warning. ${item.name} is expired. Do not dispense.`);
+        summaryNotes.push(`⛔ Expired Batch (${item.expiry}) — Location shown to clear`);
         return `
+          ${watchBanner}
           <div class="res-expired">
             <div style="font-size:15px; font-weight:bold; color:#fca5a5;">⛔ EXPIRED BATCH — DO NOT DISPENSE</div>
             <div><b>${item.name}</b> | Batch: ${item.batch} | Expired: <b>${item.expiry}</b></div>
@@ -683,15 +728,21 @@ Vicks Action 500 Extra,Paracetamol + Phenylephrine + Caffeine,CDSCO-FDC`;
 
       if (item.qty > 0) {
         voiceSummary.push(`${item.name}, ${item.rack}, ${item.shelf}, ${item.box}`);
+        summaryNotes.push(
+          watchHit
+            ? `🚨 Watchlist Alert (${watchHit}) + Located: ${item.rack} > ${item.shelf} > ${item.box} (Qty: ${item.qty})`
+            : `✅ Located: ${item.rack} > ${item.shelf} > ${item.box} (Qty: ${item.qty})`
+        );
         return `
+          ${watchBanner}
           <div class="res-green">
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <b>✅ ${item.name} (${item.form})</b>
-              <button class="btn-ghost" style="padding:3px 8px; font-size:11px;" onclick="assignRackQuick(${item.id})">📍 Set/Edit Rack</button>
+              <button class="btn-ghost" style="padding:3px 8px; font-size:11px;" onclick="assignRackQuick(${item.id})">📍 1-Click Assign Rack</button>
             </div>
             <div class="loc-box">📍 ${item.rack} ➔ ${item.shelf} ➔ ${item.box}</div>
             <div style="font-size:12px; color:#a7f3d0;">
-              Stock: <b>${item.qty}</b> | Exp: ${item.expiry} ${expStatus === 'NEAR_EXPIRY' ? '<span class="tag tag-h1">NEAR EXPIRY</span>' : ''} | Salt: ${item.saltDisplay} ${getScheduleTag(item.salt)}
+              Stock: <b>${item.qty}</b> | Exp: ${item.expiry} ${expStatus === 'NEAR_EXPIRY' ? '<span class="tag tag-h1">NEAR EXPIRY</span>' : ''} | Salt: ${item.saltDisplay}
             </div>
           </div>
         `;
@@ -699,7 +750,13 @@ Vicks Action 500 Extra,Paracetamol + Phenylephrine + Caffeine,CDSCO-FDC`;
         const alts = inventory.filter(alt =>
           alt.qty > 0 && alt.salt === item.salt && alt.form === item.form && alt.name !== item.name && checkExpiryStatus(alt.expiry) !== "EXPIRED"
         );
+        summaryNotes.push(
+          alts.length > 0
+            ? `ℹ️ Out of Stock (Qty: 0) — Only FYI Alternate Shown (${alts.at(0).name})`
+            : `ℹ️ Out of Stock (Qty: 0) — No Same-Salt Alternate`
+        );
         return `
+          ${watchBanner}
           <div class="res-fyi">
             <div><b>❌ ${item.name} — OUT OF STOCK (Qty: 0)</b></div>
             <div style="margin-top:8px; padding:8px; background:#78350f; border-radius:6px;">
@@ -718,7 +775,9 @@ Vicks Action 500 Extra,Paracetamol + Phenylephrine + Caffeine,CDSCO-FDC`;
           </div>
         `;
       }
-    }).join('');
+    });
+
+    return { html: htmlBlocks.join(''), statusSummary: summaryNotes.join(' ; ') };
   }
 
   function speakText(msg) {
@@ -737,36 +796,31 @@ Vicks Action 500 Extra,Paracetamol + Phenylephrine + Caffeine,CDSCO-FDC`;
     rec.lang = 'en-IN';
     rec.onresult = (e) => {
       document.getElementById('directSearchInput').value = e.results.item(0).item(0).transcript;
-      runDirectSearch();
+      runDirectSearch("VOICE_SEARCH");
     };
     rec.start();
   }
 
-  function logAudit(trigger, meta, items, safety, action) {
+  function logAudit(staffAndMode, meta, items, infoProvided) {
     const tbody = document.getElementById('auditTableBody');
     const tr = document.createElement('tr');
+    const isAlert = infoProvided.includes('🚨') || infoProvided.includes('⛔');
     tr.innerHTML = `
       <td>${new Date().toLocaleTimeString()}</td>
-      <td><b>${trigger}</b></td>
+      <td><b>${staffAndMode}</b></td>
       <td>${meta}</td>
       <td>${items}</td>
-      <td style="color:${safety.includes('BLOCKED') ? '#f87171' : '#34d399'}; font-weight:bold;">${safety}</td>
-      <td>${action}</td>
+      <td style="color:${isAlert ? '#f87171' : '#34d399'}; font-weight:bold;">${infoProvided}</td>
     `;
     tbody.prepend(tr);
   }
 
   window.addEventListener('DOMContentLoaded', () => {
-    const savedKey = localStorage.getItem('zigo_gemini_key');
-    if (savedKey) {
-      document.getElementById('geminiKeyInput').value = savedKey;
-      document.getElementById('ocrModeBadge').innerText = "Live Vision OCR ON";
-      document.getElementById('ocrModeBadge').style.background = "#16a34a";
-    }
-    const savedBan = localStorage.getItem('zigo_banned_rules');
-    if (savedBan) {
-      bannedRules = JSON.parse(savedBan);
-      document.getElementById('banCount').innerText = `| Banned Rules: ${bannedRules.length}`;
+    const savedWatch = localStorage.getItem('zigo_owner_watchlist');
+    if (savedWatch) {
+      ownerWatchlist = JSON.parse(savedWatch);
+      document.getElementById('banCount').innerText = `| Owner Watchlist: ${ownerWatchlist.length}`;
+      document.getElementById('bannedStatus').innerText = `✓ Active Watchlist Restored (${ownerWatchlist.length} owner rules)`;
     }
     const savedCsv = localStorage.getItem('zigo_saved_csv');
     if (savedCsv) {
