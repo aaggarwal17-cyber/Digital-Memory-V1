@@ -558,7 +558,8 @@ Corex DX,Chlorpheniramine Maleate + Codeine,Check Narcotic Rule`;
           contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: "image/jpeg", data: cleanBase64 } }] }]
         });
 
-        const resp = await fetch(`https://googleapis.com{encodeURIComponent(apiKey)}`, {
+                const resp = await fetch(`https://googleapis.com{encodeURIComponent(apiKey)}`, {
+
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: bodyPayload
