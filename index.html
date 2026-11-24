@@ -156,6 +156,13 @@
       <!-- Real Prescription Review & Editable Medicine List -->
       <div id="rxVerificationPanel" style="display:none; margin-top:10px;">
         <div id="rxPreviewNote" style="font-size:12px; color:#38bdf8; margin-bottom:8px;"></div>
+        <div id="rxImagePreviewBox" style="display:none; text-align:center; margin-bottom:10px; background:#0f172a; padding:8px; border-radius:8px; border:1px dashed #38bdf8;">
+          <img id="rxPreviewImg" style="max-width:100%; max-height:220px; border-radius:6px;" />
+          <div style="font-size:11px; color:#94a3b8; margin-top:4px;">🔒 Temporary View Only — Auto-wiped on "Next Customer"</div>
+        </div>
+        <div class="row" style="background:#0f172a; padding:6px 8px; border-radius:8px; border:1px solid #334155;">
+          <input type="password" id="geminiKeyInput" placeholder="Paste Gemini API Key here for Auto-Read Rx..." style="flex:1;" onchange="localStorage.setItem('zigo_gemini_key', this.value.trim())" />
+        </div>
         <!-- Live Prescription Image Preview (Auto-wiped on Next Customer) -->
         <div id="rxImagePreviewBox" style="display:none; text-align:center; margin-bottom:10px; background:#0f172a; padding:8px; border-radius:8px; border:1px dashed #38bdf8;">
           <img id="rxPreviewImg" style="max-width:100%; max-height:220px; border-radius:6px;" />
