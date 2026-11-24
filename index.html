@@ -161,8 +161,7 @@
           <div style="font-size:11px; color:#94a3b8; margin-top:4px;">🔒 Temporary View Only — Auto-wiped on "Next Customer"</div>
         </div>
         <div class="row" style="background:#0f172a; padding:6px 8px; border-radius:8px; border:1px solid #334155;">
-          <input type="password" id="geminiKeyInput" placeholder="Paste Gemini API Key here for Auto-Read Rx..." style="flex:1;" onchange="localStorage.setItem('zigo_gemini_key', this.value.trim())" />
-        </div>
+          <input type="password" id="geminiKeyInput"
         <!-- Live Prescription Image Preview (Auto-wiped on Next Customer) -->
         <div id="rxImagePreviewBox" style="display:none; text-align:center; margin-bottom:10px; background:#0f172a; padding:8px; border-radius:8px; border:1px dashed #38bdf8;">
           <img id="rxPreviewImg" style="max-width:100%; max-height:220px; border-radius:6px;" />
@@ -542,20 +541,33 @@ Corex DX,Chlorpheniramine Maleate + Codeine,Check Narcotic Rule`;
         return;
       }
 
-      document.getElementById('rxPreviewNote').innerText = "⏳ Reading handwriting & rotated text from prescription...";
+          document.getElementById('rxPreviewNote').innerText = "⏳ Reading handwriting & rotated text from prescription...";
       try {
         const cleanBase64 = dataUrl.split(',').at(1);
-        const prompt = `Read this medical prescription (even if rotated 90/180 degrees) and return strictly JSON: {"rxDate":"YYYY-MM-DD","doctorRegNo":"string","medicines":[{"name":"string","form":"TAB|CAP|SYP|INJ"}]}. No markdown.`;
-        const resp = await fetch(`https://googleapis.com{apiKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: file.type, data: cleanBase64 } }] }] })
+        const prompt = `Read this medical prescription (even if rotated 90/180 degrees) and return strictly JSON: {"rxDate":"YYYY-MM-DD","doctorRegNo":"string","medicines":[{"name":"string","form":"TAB|CAP|SYP|INJ"}]}. Do not wrap in markdown.`;
+        const bodyPayload = JSON.stringify({
+          contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: file.type || "image/jpeg", data: cleanBase64 } }] }]
         });
+
+        let resp = await fetch(`https://googleapis.com{encodeURIComponent(apiKey)}`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: bodyPayload
+        });
+        if (!resp.ok) {
+          resp = await fetch(`https://googleapis.com{encodeURIComponent(apiKey)}`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: bodyPayload
+          });
+        }
         const data = await resp.json();
+        if (!resp.ok || !data.candidates) {
+          throw new Error(data.error?.message || "Invalid API Key or Quota");
+        }
+
         const rawText = data.candidates.at(0).content.parts.at(0).text.replace(/```json|```/g, '').trim();
         const parsed = JSON.parse(rawText);
 
-        if (parsed.rxDate) document.getElementById('rxDate').value = parsed.rxDate;
+        if (parsed.rxDate && /^\d{4}-\d{2}-\d{2}$/.test(parsed.rxDate)) {
+          document.getElementById('rxDate').value = parsed.rxDate;
+        }
         if (parsed.doctorRegNo) document.getElementById('drRegNo').value = parsed.doctorRegNo;
 
         scannedItems = (parsed.medicines || []).map(m => {
@@ -571,8 +583,9 @@ Corex DX,Chlorpheniramine Maleate + Codeine,Check Narcotic Rule`;
         renderRxItems();
         validateGate();
       } catch (err) {
-        document.getElementById('rxPreviewNote').innerText = "⚠️ Could not auto-read (check API key) — Please add items manually from image above.";
+        document.getElementById('rxPreviewNote').innerText = `⚠️ AI Error: ${err.message} — Please check key or add items below.`;
       }
+
     };
     reader.readAsDataURL(file);
   }
