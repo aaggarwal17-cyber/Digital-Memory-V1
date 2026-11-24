@@ -251,146 +251,107 @@
     <span style="color:#38bdf8;">We Sense, Inform & Ask for Action:</span> Zero Employment Impact Guarantee.
   </div>
 </div>
-  <div class="grid">
-    <!-- SECTION 2: BIOMETRIC / STAFF PIN + PRESCRIPTION SCAN & 4-EYES GUIDE -->
-    <div class="card">
-      <h2>
-        <span>2. Prescription Scan & 4-Eyes Guide</span>
-        <button class="btn-ghost" style="padding:4px 9px; font-size:11px;" onclick="resetForNextCustomer()">🔄 Next Customer</button>
-      </h2>
+<script>
+  let ownerWatchlist = [];
+  let inventory = [];
+  let scannedItems = [];
+  let directForm = "ALL";
+  let camStream = null;
+  let activeStaffName = "Counter Staff";
 
-      <!-- Extra Layer Protection: Biometric / 4-Digit Staff PIN Unlocker -->
-      <div id="scanLockBox" style="background:#0f172a; padding:10px; border-radius:8px; border:1px solid #7c3aed; margin-bottom:10px;">
-        <div style="font-size:12px; color:#c4b5fd; margin-bottom:6px;">
-          🔐 <b>Counter Access Protection:</b> Unlock via Staff PIN (Demo: <code>1234</code>) or Biometric Touch to prevent unauthorized scans.
-        </div>
-        <div class="row" style="margin-bottom:0;">
-          <input type="password" id="staffPinInput" maxlength="4" placeholder="Enter 4-Digit Staff PIN (1234)" style="max-width:200px;" onkeyup="if(event.key==='Enter') unlockWithPin()" />
-          <button class="btn-voice" onclick="unlockWithPin()">🔓 Unlock with PIN</button>
-          <button class="btn-primary" onclick="unlockWithBiometric()">👆 Fingerprint / Biometric</button>
-        </div>
-      </div>
+  const SAMPLE_CSV_TEXT = `SN,Item Name,Composition,Strength,Supplier,Manufacturer,Qty,Batch#,Expiry Date,Rack,Shelf,Box
+1,Dolo 650 Tablet,Paracetamol,650mg,MedPlus Dist,Micro Labs,45,DL902,2027-08-15,Rack A,Shelf 2,Box 4
+2,Calpol 650 Tablet,Paracetamol,650mg,Apex Pharma,GSK,30,CP112,2027-11-20,Rack A,Shelf 2,Box 5
+3,Calpol 250 Syrup,Paracetamol,250mg/5ml,Apex Pharma,GSK,18,CS440,2027-05-10,Rack C,Shelf 1,Box 2
+4,Augmentin 625 Duo Tablet,Amoxicillin + Clavulanic Acid,625mg,City Distributors,GSK,0,AG881,2027-04-01,Rack B,Shelf 1,Box 1
+5,Moxikind CV 625 Tablet,Amoxicillin + Clavulanic Acid,625mg,Mankind Dist,Mankind,22,MK309,2027-09-12,Rack B,Shelf 1,Box 3
+6,Azithral 500 Tablet,Azithromycin,500mg,Alembic Agency,Alembic,14,AZ774,2026-09-01,Rack D,Shelf 3,Box 2
+7,Pan-D Capsule,Pantoprazole + Domperidone,40mg,Alkem Dist,Alkem,60,PD501,2028-01-10,Rack A,Shelf 4,Box 1
+8,Telma H-Combo Tablet,Nimesulide + Paracetamol,100mg+325mg,Alkem Dist,Alkem,10,SM999,2026-12-30,Rack E,Shelf 1,Box 9
+9,Zolfresh 10mg Tablet,Zolpidem,10mg,Abbott Dist,Abbott,12,ZF101,2027-06-15,Unassigned,-,-`;
 
-      <!-- 3-Way Rx Input (Active once unlocked) -->
-      <div id="rxActionControls" style="display:none;">
-        <div class="row">
-          <button class="btn-primary" onclick="openLiveCamera()">📷 Live Camera Scan</button>
-          <label class="btn-ghost" style="cursor:pointer;">
-            📁 Upload Rx Image
-            <input type="file" id="rxFileInput" accept="image/*" style="display:none;" onchange="handleRxImage(this)" />
-          </label>
-          <button class="btn-warn" onclick="openManualRxEntry()">➕ Add Rx Manually</button>
-        </div>
-        <div class="row" style="background:#0f172a; padding:6px 8px; border-radius:8px; border:1px solid #334155;">
-          <input type="password" id="geminiKeyInput" placeholder="Paste Gemini API Key here for Auto-Read Rx..." style="flex:1;" onchange="localStorage.setItem('zigo_gemini_key', this.value.trim())" />
-        </div>
-      </div>
+  const SAMPLE_WATCHLIST_CSV = `Medicine Name,Composition / Salt Combination,Owner Note
+Sumo Tablet,Nimesulide + Paracetamol,Check FDC Alert
+Zolfresh 10mg,Zolpidem,Verify Prescription & H1 Entry
+Corex DX,Chlorpheniramine Maleate + Codeine,Check Narcotic Rule`;
 
-      <!-- Live Webcam Viewfinder Box -->
-      <div id="liveCamBox" style="display:none; background:#0f172a; padding:10px; border-radius:8px; border:1px solid #38bdf8; margin-bottom:10px; text-align:center;">
-        <video id="webcamVideo" autoplay playsinline style="width:100%; max-height:220px; border-radius:6px; background:black;"></video>
-        <div class="row" style="justify-content:center; margin-top:8px; margin-bottom:0;">
-          <button class="btn-success" onclick="captureWebcamPhoto()">📸 Capture Prescription (Bill & Forget)</button>
-          <button class="btn-danger" onclick="closeLiveCamera()">✖ Close</button>
-        </div>
-      </div>
+  document.getElementById('csvFile').addEventListener('change', function(e) {
+    const file = e.target.files.item(0);
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => parseCSV(evt.target.result, file.name);
+    reader.readAsText(file);
+  });
 
-      <!-- Real Prescription Review & Editable Medicine List -->
-      <div id="rxVerificationPanel" style="display:none; margin-top:10px;">
-        <div id="rxPreviewNote" style="font-size:12px; color:#38bdf8; margin-bottom:8px;"></div>
-        <div id="rxImagePreviewBox" style="display:none; text-align:center; margin-bottom:10px; background:#0f172a; padding:8px; border-radius:8px; border:1px dashed #38bdf8;">
-          <img id="rxPreviewImg" style="max-width:100%; max-height:220px; border-radius:6px;" />
-          <div style="font-size:11px; color:#94a3b8; margin-top:4px;">🔒 Temporary View Only — Auto-wiped on "Next Customer"</div>
-        </div>
+  document.getElementById('bannedCsvFile').addEventListener('change', function(e) {
+    const file = e.target.files.item(0);
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => parseWatchlistCSV(evt.target.result, file.name);
+    reader.readAsText(file);
+  });
 
-        <div class="row">
-          <div style="flex:1;">
-            <label style="font-size:11px; color:#94a3b8;">Rx Date (Mandatory)</label>
-            <input type="date" id="rxDate" onchange="validateGate()" />
-          </div>
-          <div style="flex:1;">
-            <label style="font-size:11px; color:#94a3b8;">Doctor Reg# / Stamp ID (Mandatory)</label>
-            <input type="text" id="drRegNo" placeholder="e.g. PMC-48291" oninput="validateGate()" />
-          </div>
-        </div>
+  function loadSampleCSV() { parseCSV(SAMPLE_CSV_TEXT, "Sample_Chemist_ERP.csv"); }
+  function loadSampleWatchlist() { parseWatchlistCSV(SAMPLE_WATCHLIST_CSV, "Owner_Watchlist_Sample.csv"); }
+  function downloadSampleCSV() { triggerDownload(SAMPLE_CSV_TEXT, "ZiGo_Sample_Inventory.csv"); }
+  function downloadSampleBannedCSV() { triggerDownload(SAMPLE_WATCHLIST_CSV, "ZiGo_Owner_Watchlist_Template.csv"); }
 
-        <div style="margin: 8px 0;">
-          <label style="font-size:12px; color:#fbbf24; cursor:pointer;">
-            <input type="checkbox" id="stampChecked" onchange="validateGate()" />
-            <b>4-Eyes Check:</b> Staff physically verified Doctor Stamp, Reg# & Date on slip.
-          </label>
-        </div>
+  function triggerDownload(content, filename) {
+    const blob = new Blob([content], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+  }
 
-        <!-- Add Medicine Row to Rx List -->
-        <div class="row" style="background:#0f172a; padding:6px; border-radius:6px;">
-          <input type="text" id="newRxMedName" placeholder="Add/Correct Medicine Name (e.g. Rabera 20mg)..." style="flex:1;" onkeyup="if(event.key==='Enter') addMedicineToRxList()" />
-          <button class="btn-primary" onclick="addMedicineToRxList()">+ Add Item</button>
-        </div>
+  function cleanTokens(str) {
+    return (str || "").toLowerCase().replace(/\b\d+(\.\d+)?\s*(mg|ml|mcg|gm|g|%)\b/g, '').replace(/[^a-z0-9\s+]/g, ' ').trim();
+  }
 
-        <div id="bannedAlertBox" class="alert-watch" style="display:none;"></div>
-        <div id="rxItemsList"></div>
+  function parseWatchlistCSV(text, fileName) {
+    const lines = text.trim().split(/\r?\n/);
+    lines.shift();
+    const rules = [];
+    lines.forEach(line => {
+      if (!line.trim()) return;
+      const cols = line.split(',').map(c => c.trim());
+      const medName = cleanTokens(cols.at(0) || "");
+      const saltRaw = cleanTokens(cols.at(1) || "");
+      const saltSet = saltRaw ? saltRaw.split('+').map(s => s.trim()).filter(s => s.length >= 3) : [];
+      if (medName.length >= 3 || saltSet.length > 0) {
+        rules.push({ raw: cols.slice(0, 2).filter(Boolean).join(" | "), medName, saltSet });
+      }
+    });
+    ownerWatchlist = rules;
+    localStorage.setItem('zigo_owner_watchlist', JSON.stringify(ownerWatchlist));
+    document.getElementById('banCount').innerText = `| Owner Watchlist: ${ownerWatchlist.length}`;
+    document.getElementById('bannedStatus').innerText = `✓ Active Watchlist: "${fileName}" (${ownerWatchlist.length} owner rules)`;
+  }
 
-        <button id="confirmLocateBtn" class="btn-success" style="width:100%; margin-top:8px;" disabled onclick="executeConfirmedSearch()">
-          🔒 Complete 4-Eyes Check to Locate Racks
-        </button>
-      </div>
-    </div>
+  function clearWatchlist() {
+    ownerWatchlist = [];
+    localStorage.removeItem('zigo_owner_watchlist');
+    document.getElementById('banCount').innerText = `| Owner Watchlist: 0`;
+    document.getElementById('bannedStatus').innerText = `0 Rules Active — Pure Guide Mode`;
+  }
 
-    <!-- SECTION 3: INSTANT RACK LOCATOR & EXPIRY INSPECTOR -->
-    <div class="card">
-      <h2>
-        <span>3. Instant Rack Locator & Expiry Inspector</span>
-        <button class="btn-danger" style="padding:5px 10px; font-size:11px;" onclick="runExpiryAudit()">⏳ Expiry Check</button>
-      </h2>
-      <div class="row">
-        <input type="text" id="directSearchInput" placeholder="Search Name + Strength (e.g. Dolo 650, Telma)..." onkeyup="if(event.key==='Enter') runDirectSearch()" />
-        <button class="btn-voice" onclick="startVoiceSearch()">🎤 Speak</button>
-        <button class="btn-primary" onclick="runDirectSearch()">Locate</button>
-      </div>
-      <div class="row" style="font-size:12px; color:#94a3b8;">
-        <span>Filter Form:</span>
-        <div class="pill-group" id="directFormFilter">
-          <button class="pill active" onclick="setDirectForm('ALL', this)">ALL</button>
-          <button class="pill" onclick="setDirectForm('TAB', this)">TAB</button>
-          <button class="pill" onclick="setDirectForm('CAP', this)">CAP</button>
-          <button class="pill" onclick="setDirectForm('SYP', this)">SYP</button>
-          <button class="pill" onclick="setDirectForm('INJ', this)">INJ</button>
-        </div>
-      </div>
+  function checkOwnerWatchlist(itemName, itemSalt) {
+    if (!ownerWatchlist || ownerWatchlist.length === 0) return null;
+    const qName = cleanTokens(itemName);
+    const qSalt = cleanTokens(itemSalt);
+    const qSaltParts = qSalt ? qSalt.split('+').map(s => s.trim()).filter(Boolean) : [];
 
-      <div id="searchResultsArea" style="margin-top:12px;">
-        <div style="color:#64748b; font-size:13px; text-align:center; padding:26px 10px;">
-          Upload Inventory CSV (or Load Demo), then Search via Text, Voice, or Unlocked Rx Scan.
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- SECTION 4: HONEST ATTEMPT & INFORMATION LEDGER (ZERO DISPENSING CLAIMS) -->
-  <div class="card">
-    <h2>4. Store Search & Information Ledger (Audit Trail — Sense & Inform Log)</h2>
-    <div style="overflow-x:auto;">
-      <table>
-        <thead>
-          <tr>
-            <th>Time</th>
-            <th>Staff / Mode</th>
-            <th>Rx Meta</th>
-            <th>Searched Item(s)</th>
-            <th>Information Provided by ZiGo (Staff Acts)</th>
-          </tr>
-        </thead>
-        <tbody id="auditTableBody"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- UNIVERSAL HUMAN-FIRST ETHICAL CHARTER FOOTER -->
-  <div class="footer-charter">
-    🤝 <b>Human-First Approach Always • Tech is Only to Empower</b> &nbsp;|&nbsp;
-    <span style="color:#38bdf8;">We Sense, Inform & Ask for Action:</span> Zero Employment Impact Guarantee.
-  </div>
-</div>
+    for (const rule of ownerWatchlist) {
+      if (rule.medName && qName && (qName.includes(rule.medName) || (qName.length >= 4 && rule.medName.includes(qName)))) {
+        return rule.raw;
+      }
+      if (rule.saltSet.length > 0 && qSaltParts.length > 0) {
+        const allSaltsPresent = rule.saltSet.every(rs => qSaltParts.some(qs => qs.includes(rs) || rs.includes(qs)));
+        if (allSaltsPresent) return rule.raw;
+      }
+    }
+    return null;
+  }
   function parseCSV(text, fileName) {
     const lines = text.trim().split(/\r?\n/);
     const headerRow = lines.shift() || "";
