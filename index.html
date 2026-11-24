@@ -88,7 +88,6 @@
     </div>
   </div>
 
-
   <!-- SECTION 1B & 1C: INVENTORY SYNC + OWNER WATCHLIST CSV UPLOADER -->
   <div class="grid">
     <div class="card">
@@ -142,6 +141,9 @@
           </label>
           <button class="btn-warn" onclick="openManualRxEntry()">➕ Add Rx Manually</button>
         </div>
+        <div class="row" style="background:#0f172a; padding:6px 8px; border-radius:8px; border:1px solid #334155;">
+          <input type="password" id="geminiKeyInput" placeholder="Paste Gemini API Key here for Auto-Read Rx..." style="flex:1;" onchange="localStorage.setItem('zigo_gemini_key', this.value.trim())" />
+        </div>
       </div>
 
       <!-- Live Webcam Viewfinder Box -->
@@ -160,16 +162,7 @@
           <img id="rxPreviewImg" style="max-width:100%; max-height:220px; border-radius:6px;" />
           <div style="font-size:11px; color:#94a3b8; margin-top:4px;">🔒 Temporary View Only — Auto-wiped on "Next Customer"</div>
         </div>
-        <div class="row" style="background:#0f172a; padding:6px 8px; border-radius:8px; border:1px solid #334155;">
-          <input type="password" id="geminiKeyInput"
-        <!-- Live Prescription Image Preview (Auto-wiped on Next Customer) -->
-        <div id="rxImagePreviewBox" style="display:none; text-align:center; margin-bottom:10px; background:#0f172a; padding:8px; border-radius:8px; border:1px dashed #38bdf8;">
-          <img id="rxPreviewImg" style="max-width:100%; max-height:220px; border-radius:6px;" />
-          <div style="font-size:11px; color:#94a3b8; margin-top:4px;">🔒 Temporary View Only — Auto-wiped on "Next Customer" (Bill & Forget)</div>
-        </div>
-        <div class="row" style="background:#0f172a; padding:6px 8px; border-radius:8px; border:1px solid #334155;">
-          <input type="password" id="geminiKeyInput" placeholder="Paste Gemini API Key here for Auto-Read Rx..." style="flex:1;" onchange="localStorage.setItem('zigo_gemini_key', this.value.trim())" />
-        </div>
+
         <div class="row">
           <div style="flex:1;">
             <label style="font-size:11px; color:#94a3b8;">Rx Date (Mandatory)</label>
@@ -258,111 +251,146 @@
     <span style="color:#38bdf8;">We Sense, Inform & Ask for Action:</span> Zero Employment Impact Guarantee.
   </div>
 </div>
-<script>
-  // ZERO HARDCODED RULES — 100% Owner CSV Driven (Pure Guide)
-  let ownerWatchlist = [];
-  let inventory = [];
-  let scannedItems = [];
-  let directForm = "ALL";
-  let camStream = null;
-  let activeStaffName = "Counter Staff";
+  <div class="grid">
+    <!-- SECTION 2: BIOMETRIC / STAFF PIN + PRESCRIPTION SCAN & 4-EYES GUIDE -->
+    <div class="card">
+      <h2>
+        <span>2. Prescription Scan & 4-Eyes Guide</span>
+        <button class="btn-ghost" style="padding:4px 9px; font-size:11px;" onclick="resetForNextCustomer()">🔄 Next Customer</button>
+      </h2>
 
-  const SAMPLE_CSV_TEXT = `SN,Item Name,Composition,Strength,Supplier,Manufacturer,Qty,Batch#,Expiry Date,Rack,Shelf,Box
-1,Dolo 650 Tablet,Paracetamol,650mg,MedPlus Dist,Micro Labs,45,DL902,2027-08-15,Rack A,Shelf 2,Box 4
-2,Calpol 650 Tablet,Paracetamol,650mg,Apex Pharma,GSK,30,CP112,2027-11-20,Rack A,Shelf 2,Box 5
-3,Calpol 250 Syrup,Paracetamol,250mg/5ml,Apex Pharma,GSK,18,CS440,2027-05-10,Rack C,Shelf 1,Box 2
-4,Augmentin 625 Duo Tablet,Amoxicillin + Clavulanic Acid,625mg,City Distributors,GSK,0,AG881,2027-04-01,Rack B,Shelf 1,Box 1
-5,Moxikind CV 625 Tablet,Amoxicillin + Clavulanic Acid,625mg,Mankind Dist,Mankind,22,MK309,2027-09-12,Rack B,Shelf 1,Box 3
-6,Azithral 500 Tablet,Azithromycin,500mg,Alembic Agency,Alembic,14,AZ774,2026-09-01,Rack D,Shelf 3,Box 2
-7,Pan-D Capsule,Pantoprazole + Domperidone,40mg,Alkem Dist,Alkem,60,PD501,2028-01-10,Rack A,Shelf 4,Box 1
-8,Telma H-Combo Tablet,Nimesulide + Paracetamol,100mg+325mg,Alkem Dist,Alkem,10,SM999,2026-12-30,Rack E,Shelf 1,Box 9
-9,Zolfresh 10mg Tablet,Zolpidem,10mg,Abbott Dist,Abbott,12,ZF101,2027-06-15,Unassigned,-,-`;
+      <!-- Extra Layer Protection: Biometric / 4-Digit Staff PIN Unlocker -->
+      <div id="scanLockBox" style="background:#0f172a; padding:10px; border-radius:8px; border:1px solid #7c3aed; margin-bottom:10px;">
+        <div style="font-size:12px; color:#c4b5fd; margin-bottom:6px;">
+          🔐 <b>Counter Access Protection:</b> Unlock via Staff PIN (Demo: <code>1234</code>) or Biometric Touch to prevent unauthorized scans.
+        </div>
+        <div class="row" style="margin-bottom:0;">
+          <input type="password" id="staffPinInput" maxlength="4" placeholder="Enter 4-Digit Staff PIN (1234)" style="max-width:200px;" onkeyup="if(event.key==='Enter') unlockWithPin()" />
+          <button class="btn-voice" onclick="unlockWithPin()">🔓 Unlock with PIN</button>
+          <button class="btn-primary" onclick="unlockWithBiometric()">👆 Fingerprint / Biometric</button>
+        </div>
+      </div>
 
-  const SAMPLE_WATCHLIST_CSV = `Medicine Name,Composition / Salt Combination,Owner Note
-Sumo Tablet,Nimesulide + Paracetamol,Check FDC Alert
-Zolfresh 10mg,Zolpidem,Verify Prescription & H1 Entry
-Corex DX,Chlorpheniramine Maleate + Codeine,Check Narcotic Rule`;
+      <!-- 3-Way Rx Input (Active once unlocked) -->
+      <div id="rxActionControls" style="display:none;">
+        <div class="row">
+          <button class="btn-primary" onclick="openLiveCamera()">📷 Live Camera Scan</button>
+          <label class="btn-ghost" style="cursor:pointer;">
+            📁 Upload Rx Image
+            <input type="file" id="rxFileInput" accept="image/*" style="display:none;" onchange="handleRxImage(this)" />
+          </label>
+          <button class="btn-warn" onclick="openManualRxEntry()">➕ Add Rx Manually</button>
+        </div>
+        <div class="row" style="background:#0f172a; padding:6px 8px; border-radius:8px; border:1px solid #334155;">
+          <input type="password" id="geminiKeyInput" placeholder="Paste Gemini API Key here for Auto-Read Rx..." style="flex:1;" onchange="localStorage.setItem('zigo_gemini_key', this.value.trim())" />
+        </div>
+      </div>
 
-  document.getElementById('csvFile').addEventListener('change', function(e) {
-    const file = e.target.files.item(0);
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (evt) => parseCSV(evt.target.result, file.name);
-    reader.readAsText(file);
-  });
+      <!-- Live Webcam Viewfinder Box -->
+      <div id="liveCamBox" style="display:none; background:#0f172a; padding:10px; border-radius:8px; border:1px solid #38bdf8; margin-bottom:10px; text-align:center;">
+        <video id="webcamVideo" autoplay playsinline style="width:100%; max-height:220px; border-radius:6px; background:black;"></video>
+        <div class="row" style="justify-content:center; margin-top:8px; margin-bottom:0;">
+          <button class="btn-success" onclick="captureWebcamPhoto()">📸 Capture Prescription (Bill & Forget)</button>
+          <button class="btn-danger" onclick="closeLiveCamera()">✖ Close</button>
+        </div>
+      </div>
 
-  document.getElementById('bannedCsvFile').addEventListener('change', function(e) {
-    const file = e.target.files.item(0);
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (evt) => parseWatchlistCSV(evt.target.result, file.name);
-    reader.readAsText(file);
-  });
+      <!-- Real Prescription Review & Editable Medicine List -->
+      <div id="rxVerificationPanel" style="display:none; margin-top:10px;">
+        <div id="rxPreviewNote" style="font-size:12px; color:#38bdf8; margin-bottom:8px;"></div>
+        <div id="rxImagePreviewBox" style="display:none; text-align:center; margin-bottom:10px; background:#0f172a; padding:8px; border-radius:8px; border:1px dashed #38bdf8;">
+          <img id="rxPreviewImg" style="max-width:100%; max-height:220px; border-radius:6px;" />
+          <div style="font-size:11px; color:#94a3b8; margin-top:4px;">🔒 Temporary View Only — Auto-wiped on "Next Customer"</div>
+        </div>
 
-  function loadSampleCSV() { parseCSV(SAMPLE_CSV_TEXT, "Sample_Chemist_ERP.csv"); }
-  function loadSampleWatchlist() { parseWatchlistCSV(SAMPLE_WATCHLIST_CSV, "Owner_Watchlist_Sample.csv"); }
-  function downloadSampleCSV() { triggerDownload(SAMPLE_CSV_TEXT, "ZiGo_Sample_Inventory.csv"); }
-  function downloadSampleBannedCSV() { triggerDownload(SAMPLE_WATCHLIST_CSV, "ZiGo_Owner_Watchlist_Template.csv"); }
+        <div class="row">
+          <div style="flex:1;">
+            <label style="font-size:11px; color:#94a3b8;">Rx Date (Mandatory)</label>
+            <input type="date" id="rxDate" onchange="validateGate()" />
+          </div>
+          <div style="flex:1;">
+            <label style="font-size:11px; color:#94a3b8;">Doctor Reg# / Stamp ID (Mandatory)</label>
+            <input type="text" id="drRegNo" placeholder="e.g. PMC-48291" oninput="validateGate()" />
+          </div>
+        </div>
 
-  function triggerDownload(content, filename) {
-    const blob = new Blob([content], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = filename; a.click();
-    URL.revokeObjectURL(url);
-  }
+        <div style="margin: 8px 0;">
+          <label style="font-size:12px; color:#fbbf24; cursor:pointer;">
+            <input type="checkbox" id="stampChecked" onchange="validateGate()" />
+            <b>4-Eyes Check:</b> Staff physically verified Doctor Stamp, Reg# & Date on slip.
+          </label>
+        </div>
 
-  function cleanTokens(str) {
-    return (str || "").toLowerCase().replace(/\b\d+(\.\d+)?\s*(mg|ml|mcg|gm|g|%)\b/g, '').replace(/[^a-z0-9\s+]/g, ' ').trim();
-  }
+        <!-- Add Medicine Row to Rx List -->
+        <div class="row" style="background:#0f172a; padding:6px; border-radius:6px;">
+          <input type="text" id="newRxMedName" placeholder="Add/Correct Medicine Name (e.g. Rabera 20mg)..." style="flex:1;" onkeyup="if(event.key==='Enter') addMedicineToRxList()" />
+          <button class="btn-primary" onclick="addMedicineToRxList()">+ Add Item</button>
+        </div>
 
-  // 3-Tier Set-Match Parser (Exact Name + Full Salt Set [Order/Strength Proof] + Single Salt)
-  function parseWatchlistCSV(text, fileName) {
-    const lines = text.trim().split(/\r?\n/);
-    lines.shift();
-    const rules = [];
-    lines.forEach(line => {
-      if (!line.trim()) return;
-      const cols = line.split(',').map(c => c.trim());
-      const medName = cleanTokens(cols.at(0) || "");
-      const saltRaw = cleanTokens(cols.at(1) || "");
-      const saltSet = saltRaw ? saltRaw.split('+').map(s => s.trim()).filter(s => s.length >= 3) : [];
-      if (medName.length >= 3 || saltSet.length > 0) {
-        rules.push({ raw: cols.slice(0, 2).filter(Boolean).join(" | "), medName, saltSet });
-      }
-    });
-    ownerWatchlist = rules;
-    localStorage.setItem('zigo_owner_watchlist', JSON.stringify(ownerWatchlist));
-    document.getElementById('banCount').innerText = `| Owner Watchlist: ${ownerWatchlist.length}`;
-    document.getElementById('bannedStatus').innerText = `✓ Active Watchlist: "${fileName}" (${ownerWatchlist.length} owner rules)`;
-  }
+        <div id="bannedAlertBox" class="alert-watch" style="display:none;"></div>
+        <div id="rxItemsList"></div>
 
-  function clearWatchlist() {
-    ownerWatchlist = [];
-    localStorage.removeItem('zigo_owner_watchlist');
-    document.getElementById('banCount').innerText = `| Owner Watchlist: 0`;
-    document.getElementById('bannedStatus').innerText = `0 Rules Active — Pure Guide Mode`;
-  }
+        <button id="confirmLocateBtn" class="btn-success" style="width:100%; margin-top:8px;" disabled onclick="executeConfirmedSearch()">
+          🔒 Complete 4-Eyes Check to Locate Racks
+        </button>
+      </div>
+    </div>
 
-  function checkOwnerWatchlist(itemName, itemSalt) {
-    if (!ownerWatchlist || ownerWatchlist.length === 0) return null;
-    const qName = cleanTokens(itemName);
-    const qSalt = cleanTokens(itemSalt);
-    const qSaltParts = qSalt ? qSalt.split('+').map(s => s.trim()).filter(Boolean) : [];
+    <!-- SECTION 3: INSTANT RACK LOCATOR & EXPIRY INSPECTOR -->
+    <div class="card">
+      <h2>
+        <span>3. Instant Rack Locator & Expiry Inspector</span>
+        <button class="btn-danger" style="padding:5px 10px; font-size:11px;" onclick="runExpiryAudit()">⏳ Expiry Check</button>
+      </h2>
+      <div class="row">
+        <input type="text" id="directSearchInput" placeholder="Search Name + Strength (e.g. Dolo 650, Telma)..." onkeyup="if(event.key==='Enter') runDirectSearch()" />
+        <button class="btn-voice" onclick="startVoiceSearch()">🎤 Speak</button>
+        <button class="btn-primary" onclick="runDirectSearch()">Locate</button>
+      </div>
+      <div class="row" style="font-size:12px; color:#94a3b8;">
+        <span>Filter Form:</span>
+        <div class="pill-group" id="directFormFilter">
+          <button class="pill active" onclick="setDirectForm('ALL', this)">ALL</button>
+          <button class="pill" onclick="setDirectForm('TAB', this)">TAB</button>
+          <button class="pill" onclick="setDirectForm('CAP', this)">CAP</button>
+          <button class="pill" onclick="setDirectForm('SYP', this)">SYP</button>
+          <button class="pill" onclick="setDirectForm('INJ', this)">INJ</button>
+        </div>
+      </div>
 
-    for (const rule of ownerWatchlist) {
-      // Tier 1: Exact / Normalized Medicine Name Match
-      if (rule.medName && qName && (qName.includes(rule.medName) || (qName.length >= 4 && rule.medName.includes(qName)))) {
-        return rule.raw;
-      }
-      // Tier 2 & 3: Full Salt-Combination Set Match (Order & Strength Proof)
-      if (rule.saltSet.length > 0 && qSaltParts.length > 0) {
-        const allSaltsPresent = rule.saltSet.every(rs => qSaltParts.some(qs => qs.includes(rs) || rs.includes(qs)));
-        if (allSaltsPresent) return rule.raw;
-      }
-    }
-    return null;
-  }
+      <div id="searchResultsArea" style="margin-top:12px;">
+        <div style="color:#64748b; font-size:13px; text-align:center; padding:26px 10px;">
+          Upload Inventory CSV (or Load Demo), then Search via Text, Voice, or Unlocked Rx Scan.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 4: HONEST ATTEMPT & INFORMATION LEDGER (ZERO DISPENSING CLAIMS) -->
+  <div class="card">
+    <h2>4. Store Search & Information Ledger (Audit Trail — Sense & Inform Log)</h2>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Staff / Mode</th>
+            <th>Rx Meta</th>
+            <th>Searched Item(s)</th>
+            <th>Information Provided by ZiGo (Staff Acts)</th>
+          </tr>
+        </thead>
+        <tbody id="auditTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- UNIVERSAL HUMAN-FIRST ETHICAL CHARTER FOOTER -->
+  <div class="footer-charter">
+    🤝 <b>Human-First Approach Always • Tech is Only to Empower</b> &nbsp;|&nbsp;
+    <span style="color:#38bdf8;">We Sense, Inform & Ask for Action:</span> Zero Employment Impact Guarantee.
+  </div>
+</div>
   function parseCSV(text, fileName) {
     const lines = text.trim().split(/\r?\n/);
     const headerRow = lines.shift() || "";
@@ -424,7 +452,6 @@ Corex DX,Chlorpheniramine Maleate + Codeine,Check Narcotic Rule`;
     return 'TAB';
   }
 
-  // Biometric / Staff PIN Unlock Functions
   function unlockWithPin() {
     const pin = document.getElementById('staffPinInput').value.trim();
     if (pin.length < 4) { alert("Please enter a 4-digit Staff PIN (e.g., 1234)."); return; }
@@ -463,7 +490,6 @@ Corex DX,Chlorpheniramine Maleate + Codeine,Check Narcotic Rule`;
     badge.innerText = `🔓 ${staffLabel}`;
     badge.style.background = "#16a34a";
   }
-
   function resetForNextCustomer() {
     closeLiveCamera();
     document.getElementById('rxVerificationPanel').style.display = 'none';
@@ -488,6 +514,7 @@ Corex DX,Chlorpheniramine Maleate + Codeine,Check Narcotic Rule`;
     if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
     document.getElementById('liveCamBox').style.display = 'none';
   }
+
   function captureWebcamPhoto() {
     const video = document.getElementById('webcamVideo');
     const canvas = document.createElement('canvas');
@@ -520,6 +547,24 @@ Corex DX,Chlorpheniramine Maleate + Codeine,Check Narcotic Rule`;
     validateGate();
   }
 
+  function compressImageToJpeg(dataUrl, maxDim = 900) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if (w > maxDim || h > maxDim) {
+          if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
+          else { w = Math.round((w * maxDim) / h); h = maxDim; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.8));
+      };
+      img.src = dataUrl;
+    });
+  }
+
   async function processRealRxFile(file) {
     if (inventory.length === 0) loadSampleCSV();
     const reader = new FileReader();
@@ -535,31 +580,31 @@ Corex DX,Chlorpheniramine Maleate + Codeine,Check Narcotic Rule`;
       renderRxItems();
       validateGate();
 
-      const apiKey = localStorage.getItem('zigo_gemini_key') || (document.getElementById('geminiKeyInput')?.value.trim());
+      const rawKey = document.getElementById('geminiKeyInput')?.value.trim() || localStorage.getItem('zigo_gemini_key') || "";
+      const apiKey = rawKey.replace(/\s+/g, '');
       if (!apiKey) {
         document.getElementById('rxPreviewNote').innerText = "📋 Slip Displayed! Add medicines below (or paste Gemini API Key for Auto-OCR).";
         return;
       }
+      localStorage.setItem('zigo_gemini_key', apiKey);
 
-          document.getElementById('rxPreviewNote').innerText = "⏳ Reading handwriting & rotated text from prescription...";
+      document.getElementById('rxPreviewNote').innerText = "⏳ Optimizing image & reading all medicines...";
       try {
-        const cleanBase64 = dataUrl.split(',').at(1);
-        const prompt = `Read this medical prescription (even if rotated 90/180 degrees) and return strictly JSON: {"rxDate":"YYYY-MM-DD","doctorRegNo":"string","medicines":[{"name":"string","form":"TAB|CAP|SYP|INJ"}]}. Do not wrap in markdown.`;
+        const smallJpeg = await compressImageToJpeg(dataUrl, 900);
+        const cleanBase64 = smallJpeg.split(',').at(1);
+        const prompt = `Read this medical prescription (even if rotated 90/180 degrees) and return strictly JSON: {"rxDate":"YYYY-MM-DD","doctorRegNo":"string","medicines":[{"name":"string","form":"TAB|CAP|SYP|INJ"}]}. No markdown.`;
         const bodyPayload = JSON.stringify({
-          contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: file.type || "image/jpeg", data: cleanBase64 } }] }]
+          contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: "image/jpeg", data: cleanBase64 } }] }]
         });
 
-        let resp = await fetch(`https://googleapis.com{encodeURIComponent(apiKey)}`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: bodyPayload
+        const resp = await fetch(`https://googleapis.com{encodeURIComponent(apiKey)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: bodyPayload
         });
-        if (!resp.ok) {
-          resp = await fetch(`https://googleapis.com{encodeURIComponent(apiKey)}`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: bodyPayload
-          });
-        }
         const data = await resp.json();
         if (!resp.ok || !data.candidates) {
-          throw new Error(data.error?.message || "Invalid API Key or Quota");
+          throw new Error(data.error?.message || "Invalid API Key");
         }
 
         const rawText = data.candidates.at(0).content.parts.at(0).text.replace(/```json|```/g, '').trim();
@@ -583,14 +628,11 @@ Corex DX,Chlorpheniramine Maleate + Codeine,Check Narcotic Rule`;
         renderRxItems();
         validateGate();
       } catch (err) {
-        document.getElementById('rxPreviewNote').innerText = `⚠️ AI Error: ${err.message} — Please check key or add items below.`;
+        document.getElementById('rxPreviewNote').innerText = `⚠️ AI Error: ${err.message} — Check internet/VPN or add items below.`;
       }
-
     };
     reader.readAsDataURL(file);
   }
-
-  
   function addMedicineToRxList() {
     const inp = document.getElementById('newRxMedName');
     const val = inp.value.trim();
@@ -607,6 +649,7 @@ Corex DX,Chlorpheniramine Maleate + Codeine,Check Narcotic Rule`;
     renderRxItems();
     validateGate();
   }
+
   function renderRxItems() {
     const list = document.getElementById('rxItemsList');
     list.innerHTML = "";
@@ -710,7 +753,6 @@ Corex DX,Chlorpheniramine Maleate + Codeine,Check Narcotic Rule`;
     logAudit(`${activeStaffName} [EXPIRY_CHECK]`, "Full Store Scan", `${flagged.length} Flagged Batches`, `Sensed ${flagged.length} expired/near-expiry batches for staff action`);
   }
 
-  // 1-Click Visual Rack Picker (Rack = Almirah, Shelf = Compartment, Box = Item Bin)
   function assignRackQuick(itemId) {
     const item = inventory.find(i => i.id === itemId);
     if (!item) return;
@@ -795,7 +837,6 @@ Corex DX,Chlorpheniramine Maleate + Codeine,Check Narcotic Rule`;
       return nameOk && strOk && formOk;
     });
 
-    // Check Owner Watchlist even if item is not in store CSV
     const directWatchHit = checkOwnerWatchlist(queryName, "");
 
     if (matches.length === 0) {
@@ -919,6 +960,10 @@ Corex DX,Chlorpheniramine Maleate + Codeine,Check Narcotic Rule`;
   }
 
   window.addEventListener('DOMContentLoaded', () => {
+    const savedKey = localStorage.getItem('zigo_gemini_key');
+    if (savedKey && document.getElementById('geminiKeyInput')) {
+      document.getElementById('geminiKeyInput').value = savedKey;
+    }
     const savedWatch = localStorage.getItem('zigo_owner_watchlist');
     if (savedWatch) {
       ownerWatchlist = JSON.parse(savedWatch);
