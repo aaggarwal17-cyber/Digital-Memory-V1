@@ -489,32 +489,43 @@ Corex DX,Chlorpheniramine Maleate + Codeine,Check Narcotic Rule`;
     if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
     document.getElementById('liveCamBox').style.display = 'none';
   }
-
   function captureWebcamPhoto() {
-   const video = document.getElementById('webcamVideo');
+    const video = document.getElementById('webcamVideo');
     const canvas = document.createElement('canvas');
     canvas.width = video.videoWidth || 640;
     canvas.height = video.videoHeight || 480;
     canvas.getContext('2d').drawImage(video, 0, 0);
     closeLiveCamera();
     canvas.toBlob(blob => {
-      const file = new File([blob], "webcam_rx.jpg", { type: "image/jpeg" });
-      processRealRxFile(file);
+      processRealRxFile(new File([blob], "webcam_rx.jpg", { type: "image/jpeg" }));
     }, 'image/jpeg', 0.9);
   }
 
   function handleRxImage(inputEl) {
-  const file = inputEl.files.item(0);
+    const file = inputEl.files.item(0);
     if (!file) return;
     inputEl.value = "";
     processRealRxFile(file);
   }
-async function processRealRxFile(file) {
+
+  function openManualRxEntry() {
+    if (inventory.length === 0) loadSampleCSV();
+    document.getElementById('rxVerificationPanel').style.display = 'block';
+    document.getElementById('rxImagePreviewBox').style.display = 'none';
+    document.getElementById('rxPreviewNote').innerText = "📋 Manual Prescription Verification Mode";
+    document.getElementById('rxDate').value = new Date().toISOString().slice(0, 10);
+    document.getElementById('drRegNo').value = "";
+    document.getElementById('stampChecked').checked = false;
+    scannedItems = [];
+    renderRxItems();
+    validateGate();
+  }
+
+  async function processRealRxFile(file) {
     if (inventory.length === 0) loadSampleCSV();
     const reader = new FileReader();
     reader.onload = async (e) => {
       const dataUrl = e.target.result;
-      // 1. Show Prescription Image on Screen
       document.getElementById('rxVerificationPanel').style.display = 'block';
       document.getElementById('rxImagePreviewBox').style.display = 'block';
       document.getElementById('rxPreviewImg').src = dataUrl;
@@ -525,23 +536,48 @@ async function processRealRxFile(file) {
       renderRxItems();
       validateGate();
 
+      const apiKey = localStorage.getItem('zigo_gemini_key') || (document.getElementById('geminiKeyInput')?.value.trim());
+      if (!apiKey) {
+        document.getElementById('rxPreviewNote').innerText = "📋 Slip Displayed! Add medicines below (or paste Gemini API Key for Auto-OCR).";
+        return;
+      }
+
+      document.getElementById('rxPreviewNote').innerText = "⏳ Reading handwriting & rotated text from prescription...";
+      try {
+        const cleanBase64 = dataUrl.split(',').at(1);
+        const prompt = `Read this medical prescription (even if rotated 90/180 degrees) and return strictly JSON: {"rxDate":"YYYY-MM-DD","doctorRegNo":"string","medicines":[{"name":"string","form":"TAB|CAP|SYP|INJ"}]}. No markdown.`;
+        const resp = await fetch(`https://googleapis.com{apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: file.type, data: cleanBase64 } }] }] })
+        });
+        const data = await resp.json();
+        const rawText = data.candidates.at(0).content.parts.at(0).text.replace(/```json|```/g, '').trim();
+        const parsed = JSON.parse(rawText);
+
+        if (parsed.rxDate) document.getElementById('rxDate').value = parsed.rxDate;
+        if (parsed.doctorRegNo) document.getElementById('drRegNo').value = parsed.doctorRegNo;
+
+        scannedItems = (parsed.medicines || []).map(m => {
+          const dbMatch = inventory.find(it => it.name.toLowerCase().includes((m.name || "").toLowerCase()));
+          return {
+            name: m.name || "Unknown",
+            form: (m.form || detectForm(m.name || "")).toUpperCase(),
+            confirmed: false,
+            watchHit: checkOwnerWatchlist(m.name, dbMatch ? dbMatch.saltDisplay : "")
+          };
+        });
+        document.getElementById('rxPreviewNote').innerText = `✅ AI Extracted ${scannedItems.length} medicines — Verify & tick below:`;
+        renderRxItems();
+        validateGate();
+      } catch (err) {
+        document.getElementById('rxPreviewNote').innerText = "⚠️ Could not auto-read (check API key) — Please add items manually from image above.";
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+
   
-  function openManualRxEntry() {
-    openRealRxReview("Manual Prescription Verification Mode");
-  }
-
-  function openRealRxReview(noteText) {
-    if (inventory.length === 0) loadSampleCSV();
-    document.getElementById('rxVerificationPanel').style.display = 'block';
-    document.getElementById('rxPreviewNote').innerText = `📋 ${noteText}`;
-    document.getElementById('rxDate').value = new Date().toISOString().slice(0, 10);
-    document.getElementById('drRegNo').value = "";
-    document.getElementById('stampChecked').checked = false;
-    scannedItems = [];
-    renderRxItems();
-    validateGate();
-  }
-
   function addMedicineToRxList() {
     const inp = document.getElementById('newRxMedName');
     const val = inp.value.trim();
