@@ -232,8 +232,11 @@
 
   <!-- SECTION 4: HONEST ATTEMPT & INFORMATION LEDGER (ZERO DISPENSING CLAIMS) -->
   <div class="card">
-    <h2>4. Store Search & Information Ledger (Audit Trail — Sense & Inform Log)</h2>
-    <div style="overflow-x:auto;">
+        <h2>
+      <span>4. Store Search & Information Ledger (Audit Trail — Sense & Inform Log)</span>
+      <button class="btn-success" style="padding:5px 10px; font-size:11px;" onclick="exportAuditLogCSV()">📥 Export Audit Log (CSV)</button>
+    </h2>
+ <div style="overflow-x:auto;">
       <table>
         <thead>
           <tr>
@@ -1037,6 +1040,17 @@ Corex DX,Chlorpheniramine Maleate + Codeine,Check Narcotic Rule`;
       inventory = JSON.parse(savedLiveInv);
       document.getElementById('dbCount').innerText = `Inventory: ${inventory.length}`;
     }
+  }
+    function exportAuditLogCSV() {
+    const rows = document.querySelectorAll('#auditTableBody tr');
+    if (rows.length === 0) { alert("No audit logs recorded yet to export."); return; }
+    const csvLines = ["Time,Staff / Mode,Rx Meta,Searched Item(s),Information Provided by ZiGo"];
+    rows.forEach(tr => {
+      const cols = Array.from(tr.querySelectorAll('td')).map(td => `"${td.innerText.replace(/"/g, '""')}"`);
+      csvLines.push(cols.join(","));
+    });
+    const todayStr = new Date().toISOString().slice(0, 10);
+    triggerDownload(csvLines.join("\n"), `ZiGo_ShelfSense_Audit_Log_${todayStr}.csv`);
   });
 </script>
 </body>
