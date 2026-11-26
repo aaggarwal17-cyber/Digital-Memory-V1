@@ -24,7 +24,7 @@
     .btn-danger { background: #dc2626; color: white; }
     .btn-voice { background: #7c3aed; color: white; }
     .btn-ghost { background: #334155; color: #e2e8f0; }
-    input[type="text"], input[type="password"], input[type="date"] { background: #0f172a; border: 1px solid #475569; color: white; padding: 8px 11px; border-radius: 8px; width: 100%; font-size: 13px; }
+    input[type="text"], input[type="password"], input[type="date"], input[type="number"] { background: #0f172a; border: 1px solid #475569; color: white; padding: 8px 11px; border-radius: 8px; width: 100%; font-size: 13px; }
     .row { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
     .pill-group { display: inline-flex; gap: 4px; background: #0f172a; padding: 3px; border-radius: 6px; border: 1px solid #334155; }
     .pill { padding: 4px 8px; font-size: 11px; border-radius: 4px; background: transparent; color: #94a3b8; }
@@ -196,14 +196,18 @@
       </div>
     </div>
 
-    <!-- SECTION 3: INSTANT RACK LOCATOR & EXPIRY INSPECTOR -->
+    <!-- SECTION 3: INSTANT RACK LOCATOR, QTY COUNTER & EXPIRY/UNDERSTOCK INSPECTOR -->
     <div class="card">
       <h2>
-        <span>3. Instant Rack Locator & Expiry Inspector</span>
-        <button class="btn-danger" style="padding:5px 10px; font-size:11px;" onclick="runExpiryAudit()">⏳ Expiry Check</button>
+        <span>3. Instant Rack Locator & Inspector</span>
+        <div class="row" style="margin:0;">
+          <button class="btn-warn" style="padding:5px 10px; font-size:11px;" onclick="runUnderstockAudit()">📉 Understock (≤5)</button>
+          <button class="btn-danger" style="padding:5px 10px; font-size:11px;" onclick="runExpiryAudit()">⏳ Expiry Check</button>
+        </div>
       </h2>
       <div class="row">
-        <input type="text" id="directSearchInput" placeholder="Search Name + Strength (e.g. Dolo 650, Telma)..." onkeyup="if(event.key==='Enter') runDirectSearch()" />
+        <input type="text" id="directSearchInput" placeholder="Search Name + Strength (e.g. Dolo 650)..." style="flex:1;" onkeyup="if(event.key==='Enter') runDirectSearch()" />
+        <input type="number" id="directQtyInput" value="1" min="1" max="500" title="Count / Strips" style="width:68px; color:#38bdf8; font-weight:bold; text-align:center;" />
         <button class="btn-voice" onclick="startVoiceSearch()">🎤 Speak</button>
         <button class="btn-primary" onclick="runDirectSearch()">Locate</button>
       </div>
@@ -255,6 +259,7 @@
   let ownerWatchlist = [];
   let inventory = [];
   let scannedItems = [];
+  let pendingHandoverBatch = [];
   let directForm = "ALL";
   let camStream = null;
   let activeStaffName = "Counter Staff";
@@ -268,7 +273,7 @@
 6,Azithral 500 Tablet,Azithromycin,500mg,Alembic Agency,Alembic,14,AZ774,2026-09-01,Rack D,Shelf 3,Box 2
 7,Pan-D Capsule,Pantoprazole + Domperidone,40mg,Alkem Dist,Alkem,60,PD501,2028-01-10,Rack A,Shelf 4,Box 1
 8,Telma H-Combo Tablet,Nimesulide + Paracetamol,100mg+325mg,Alkem Dist,Alkem,10,SM999,2026-12-30,Rack E,Shelf 1,Box 9
-9,Zolfresh 10mg Tablet,Zolpidem,10mg,Abbott Dist,Abbott,12,ZF101,2027-06-15,Unassigned,-,-`;
+9,Zolfresh 10mg Tablet,Zolpidem,10mg,Abbott Dist,Abbott,4,ZF101,2027-06-15,Unassigned,-,-`;
 
   const SAMPLE_WATCHLIST_CSV = `Medicine Name,Composition / Salt Combination,Owner Note
 Sumo Tablet,Nimesulide + Paracetamol,Check FDC Alert
@@ -459,6 +464,7 @@ Corex DX,Chlorpheniramine Maleate + Codeine,Check Narcotic Rule`;
     document.getElementById('rxFileInput').value = "";
     document.getElementById('searchResultsArea').innerHTML = '<div style="color:#38bdf8; text-align:center; padding:20px;">Ready for Next Customer — Scan Rx, Speak, or Search!</div>';
     scannedItems = [];
+    pendingHandoverBatch = [];
   }
 
   async function openLiveCamera() {
@@ -553,13 +559,13 @@ Corex DX,Chlorpheniramine Maleate + Codeine,Check Narcotic Rule`;
       try {
         const smallJpeg = await compressImageToJpeg(dataUrl, 900);
         const cleanBase64 = smallJpeg.split(',').at(1);
-        const prompt = `Read this medical prescription (even if rotated 90/180 degrees) and return strictly JSON: {"rxDate":"YYYY-MM-DD","doctorRegNo":"string","medicines":[{"name":"string","form":"TAB|CAP|SYP|INJ"}]}. No markdown.`;
+        const prompt = `Read this medical prescription (even if rotated 90/180 degrees) and return strictly JSON: {"rxDate":"YYYY-MM-DD","doctorRegNo":"string","medicines":[{"name":"string","form":"TAB|CAP|SYP|INJ","qty":1}]}. No markdown.`;
         const bodyPayload = JSON.stringify({
           contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: "image/jpeg", data: cleanBase64 } }] }]
         });
 
-                const resp = await fetch(`https://googleapis.com{encodeURIComponent(apiKey)}`, {
-
+        const apiEndpoint = "https://googleapis.com" + encodeURIComponent(apiKey);
+        const resp = await fetch(apiEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: bodyPayload
@@ -582,6 +588,7 @@ Corex DX,Chlorpheniramine Maleate + Codeine,Check Narcotic Rule`;
           return {
             name: m.name || "Unknown",
             form: (m.form || detectForm(m.name || "")).toUpperCase(),
+            qty: Math.max(1, parseInt(m.qty || "1", 10)),
             confirmed: false,
             watchHit: checkOwnerWatchlist(m.name, dbMatch ? dbMatch.saltDisplay : "")
           };
@@ -604,6 +611,7 @@ Corex DX,Chlorpheniramine Maleate + Codeine,Check Narcotic Rule`;
     scannedItems.push({
       name: val,
       form: detectForm(val),
+      qty: 1,
       confirmed: true,
       watchHit: watchHit
     });
@@ -625,6 +633,7 @@ Corex DX,Chlorpheniramine Maleate + Codeine,Check Narcotic Rule`;
           ${item.watchHit ? `<span class="tag tag-x">⚠️ OWNER ALERT (${item.watchHit})</span>` : ''}
         </div>
         <div class="row" style="margin:0;">
+          <input type="number" value="${item.qty || 1}" min="1" max="500" title="Qty" style="width:58px; padding:4px; text-align:center;" onchange="setItemQty(${idx}, this.value)" />
           <div class="pill-group">
             ${['TAB','CAP','SYP','INJ'].map(f => `
               <button class="pill ${item.form===f ? 'active' : ''}" onclick="setItemForm(${idx}, '${f}')">${f}</button>
@@ -639,6 +648,7 @@ Corex DX,Chlorpheniramine Maleate + Codeine,Check Narcotic Rule`;
 
   function toggleItemConfirm(idx, val) { scannedItems.at(idx).confirmed = val; validateGate(); }
   function setItemForm(idx, form) { scannedItems.at(idx).form = form; renderRxItems(); }
+  function setItemQty(idx, val) { scannedItems.at(idx).qty = Math.max(1, parseInt(val || "1", 10)); }
   function removeRxItem(idx) { scannedItems.splice(idx, 1); renderRxItems(); validateGate(); }
 
   function validateGate() {
@@ -674,14 +684,16 @@ Corex DX,Chlorpheniramine Maleate + Codeine,Check Narcotic Rule`;
     area.innerHTML = "";
     let voiceSummary = [];
     let ledgerOutcomes = [];
+    pendingHandoverBatch = [];
 
     scannedItems.forEach(req => {
-      const res = renderMatchCard(req.name, "", req.form, voiceSummary);
+      const res = renderMatchCard(req.name, "", req.form, req.qty || 1, voiceSummary);
       area.innerHTML += res.html;
-      ledgerOutcomes.push(`${req.name}: ${res.statusSummary}`);
+      ledgerOutcomes.push(`${req.name} (x${req.qty || 1}): ${res.statusSummary}`);
     });
+    area.innerHTML += renderHandoverConfirmationBar();
     if (voiceSummary.length > 0) speakText(voiceSummary.join(". "));
-    logAudit(`${activeStaffName} [RX_SCAN]`, `Dr: ${regVal} | ${dateVal}`, scannedItems.map(i=>i.name).join(', '), ledgerOutcomes.join(' | '));
+    logAudit(`${activeStaffName} [RX_SCAN]`, `Dr: ${regVal} | ${dateVal}`, scannedItems.map(i=>`${i.name} (x${i.qty||1})`).join(', '), ledgerOutcomes.join(' | '));
   }
 
   function checkExpiryStatus(expStr) {
@@ -773,18 +785,90 @@ Corex DX,Chlorpheniramine Maleate + Codeine,Check Narcotic Rule`;
   function runDirectSearch(sourceMode = "TEXT_SEARCH") {
     if (inventory.length === 0) loadSampleCSV();
     const query = document.getElementById('directSearchInput').value.trim();
+    const reqQty = Math.max(1, parseInt(document.getElementById('directQtyInput').value || "1", 10));
     if (!query) return;
 
     const area = document.getElementById('searchResultsArea');
     let voiceSummary = [];
-    const res = renderMatchCard(query, "", directForm === "ALL" ? "" : directForm, voiceSummary);
-    area.innerHTML = res.html;
+    pendingHandoverBatch = [];
+
+    const res = renderMatchCard(query, "", directForm === "ALL" ? "" : directForm, reqQty, voiceSummary);
+    area.innerHTML = res.html + renderHandoverConfirmationBar();
 
     if (voiceSummary.length > 0) speakText(voiceSummary.join(". "));
-    logAudit(`${activeStaffName} [${sourceMode}]`, "Direct Counter Query", `${query} [${directForm}]`, res.statusSummary);
+    logAudit(`${activeStaffName} [${sourceMode}]`, `Req Qty: ${reqQty}`, `${query} [${directForm}]`, res.statusSummary);
   }
 
-  function renderMatchCard(queryName, queryStrength, queryForm, voiceSummary) {
+  function renderHandoverConfirmationBar() {
+    if (pendingHandoverBatch.length === 0) return "";
+    const summaryText = pendingHandoverBatch.map(p => `${p.name} (-${p.deductQty})`).join(", ");
+    return `
+      <div id="handoverConfirmCard" style="background:#0f172a; border:2px solid #16a34a; border-radius:10px; padding:12px; margin-top:10px;">
+        <div style="font-size:13px; font-weight:bold; color:#4ade80; margin-bottom:6px;">
+          🤝 Pharmacist Confirmation: All medicines handed over to customer?
+        </div>
+        <div style="font-size:12px; color:#cbd5e1; margin-bottom:8px;">
+          Will reduce live stock for: <b>${summaryText}</b>
+        </div>
+        <div class="row" style="margin-bottom:0;">
+          <button class="btn-success" style="flex:1;" onclick="confirmHandoverAndDeduct()">✅ Yes, All Handed Over (Reduce Stock)</button>
+          <button class="btn-ghost" onclick="cancelHandover()">❌ Not Taken (Keep Stock)</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function confirmHandoverAndDeduct() {
+    if (pendingHandoverBatch.length === 0) return;
+    let changes = [];
+    pendingHandoverBatch.forEach(entry => {
+      const it = inventory.find(x => x.id === entry.id);
+      if (it) {
+        const oldQty = it.qty;
+        it.qty = Math.max(0, it.qty - entry.deductQty);
+        changes.push(`${it.name}: ${oldQty} ➔ ${it.qty}`);
+      }
+    });
+    localStorage.setItem('zigo_saved_inventory_json', JSON.stringify(inventory));
+    const card = document.getElementById('handoverConfirmCard');
+    if (card) {
+      card.innerHTML = `<div style="color:#4ade80; font-weight:bold; font-size:13px;">✅ Handover Confirmed! Live Stock Updated: ${changes.join(" | ")}</div>`;
+    }
+    logAudit(`${activeStaffName} [HANDOVER_OK]`, "Stock Updated", changes.join(", "), "Confirmed handed over — Inventory count reduced");
+    pendingHandoverBatch = [];
+  }
+
+  function cancelHandover() {
+    const card = document.getElementById('handoverConfirmCard');
+    if (card) {
+      card.innerHTML = `<div style="color:#94a3b8; font-size:12px;">ℹ️ Handover Cancelled — Store inventory count unchanged.</div>`;
+    }
+    pendingHandoverBatch = [];
+  }
+
+  function runUnderstockAudit() {
+    if (inventory.length === 0) loadSampleCSV();
+    const area = document.getElementById('searchResultsArea');
+    const lowItems = inventory.filter(it => it.qty <= 5);
+    if (lowItems.length === 0) {
+      area.innerHTML = `<div class="res-green">✅ <b>Stock Healthy:</b> All ${inventory.length} items have more than 5 units in stock!</div>`;
+      return;
+    }
+    area.innerHTML = `
+      <div class="res-fyi">
+        <div style="font-size:14px; font-weight:bold; color:#fde68a; margin-bottom:8px;">
+          📉 UNDERSTOCK & REORDER LIST (${lowItems.length} Items with Qty ≤ 5)
+        </div>
+        ${lowItems.map(it => `
+          <div style="padding:6px 0; border-bottom:1px solid #78350f; font-size:13px;">
+            • <b>${it.name}</b> — Remaining Qty: <b style="color:${it.qty === 0 ? '#fca5a5' : '#fde68a'};">${it.qty}</b> | Location: ${it.rack} > ${it.shelf} > ${it.box}
+          </div>
+        `).join('')}
+      </div>
+    `;
+    logAudit(`${activeStaffName} [UNDERSTOCK_CHECK]`, "Threshold ≤ 5", `${lowItems.length} Low/Zero Items`, `Displayed understock reorder list to staff`);
+  }
+  function renderMatchCard(queryName, queryStrength, queryForm, reqQty, voiceSummary) {
     const qTokens = queryName.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(Boolean);
     const matches = inventory.filter(it => {
       const hay = (it.name + " " + it.strengthDisplay).toLowerCase();
@@ -833,11 +917,17 @@ Corex DX,Chlorpheniramine Maleate + Codeine,Check Narcotic Rule`;
       }
 
       if (item.qty > 0) {
+        const actualDeduct = Math.min(item.qty, reqQty);
+        pendingHandoverBatch.push({ id: item.id, name: item.name, deductQty: actualDeduct });
+        const afterQty = item.qty - actualDeduct;
+        const shortWarn = reqQty > item.qty ? `<div style="color:#fde68a; font-size:12px; margin-top:4px;">⚠️ Requested ${reqQty}, only ${item.qty} available in stock!</div>` : "";
+        const lowTag = afterQty <= 5 ? `<span class="tag tag-h1">LOW STOCK AFTER HANDOVER (${afterQty})</span>` : "";
+
         voiceSummary.push(`${item.name}, ${item.rack}, ${item.shelf}, ${item.box}`);
         summaryNotes.push(
           watchHit
-            ? `🚨 Watchlist Alert (${watchHit}) + Located: ${item.rack} > ${item.shelf} > ${item.box} (Qty: ${item.qty})`
-            : `✅ Located: ${item.rack} > ${item.shelf} > ${item.box} (Qty: ${item.qty})`
+            ? `🚨 Watchlist Alert (${watchHit}) + Located: ${item.rack} > ${item.shelf} > ${item.box} (Stock: ${item.qty}, Req: ${reqQty})`
+            : `✅ Located: ${item.rack} > ${item.shelf} > ${item.box} (Stock: ${item.qty}, Req: ${reqQty})`
         );
         return `
           ${watchBanner}
@@ -848,8 +938,10 @@ Corex DX,Chlorpheniramine Maleate + Codeine,Check Narcotic Rule`;
             </div>
             <div class="loc-box">📍 ${item.rack} ➔ ${item.shelf} ➔ ${item.box}</div>
             <div style="font-size:12px; color:#a7f3d0;">
-              Stock: <b>${item.qty}</b> | Exp: ${item.expiry} ${expStatus === 'NEAR_EXPIRY' ? '<span class="tag tag-h1">NEAR EXPIRY</span>' : ''} | Salt: ${item.saltDisplay}
+              Available: <b>${item.qty}</b> | Requested: <b>${reqQty}</b> ➔ Left after handover: <b>${afterQty}</b> ${lowTag}
             </div>
+            ${shortWarn}
+            <div style="font-size:11px; color:#6ee7b7; margin-top:4px;">Exp: ${item.expiry} | Salt: ${item.saltDisplay}</div>
           </div>
         `;
       } else {
@@ -901,7 +993,14 @@ Corex DX,Chlorpheniramine Maleate + Codeine,Check Narcotic Rule`;
     const rec = new SpeechRec();
     rec.lang = 'en-IN';
     rec.onresult = (e) => {
-      document.getElementById('directSearchInput').value = e.results.item(0).item(0).transcript;
+      const spoken = e.results.item(0).item(0).transcript;
+      const countMatch = spoken.match(/\b(\d+)\s*(strip|strips|tab|tablet|tablets|bottle|bottles|pack|packs|qty)?\b/i);
+      if (countMatch && parseInt(countMatch.at(1), 10) < 100) {
+        document.getElementById('directQtyInput').value = countMatch.at(1);
+        document.getElementById('directSearchInput').value = spoken.replace(countMatch.at(0), '').trim();
+      } else {
+        document.getElementById('directSearchInput').value = spoken;
+      }
       runDirectSearch("VOICE_SEARCH");
     };
     rec.start();
@@ -936,6 +1035,11 @@ Corex DX,Chlorpheniramine Maleate + Codeine,Check Narcotic Rule`;
     if (savedCsv) {
       const d = JSON.parse(savedCsv);
       parseCSV(d.text, d.fileName);
+    }
+    const savedLiveInv = localStorage.getItem('zigo_saved_inventory_json');
+    if (savedLiveInv) {
+      inventory = JSON.parse(savedLiveInv);
+      document.getElementById('dbCount').innerText = `Inventory: ${inventory.length}`;
     }
   });
 </script>
