@@ -871,115 +871,89 @@ Corex DX,Chlorpheniramine Maleate + Codeine,Check Narcotic Rule`;
     `;
     logAudit(`${activeStaffName} [UNDERSTOCK_CHECK]`, "Threshold ≤ 5", `${lowItems.length} Low/Zero Items`, `Displayed understock reorder list to staff`);
   }
-  function renderMatchCard(queryName, queryStrength, queryForm, reqQty, voiceSummary) {
-    const qTokens = queryName.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(Boolean);
-    const matches = inventory.filter(it => {
-      const hay = (it.name + " " + it.strengthDisplay).toLowerCase();
-      const nameOk = qTokens.every(tok => {
-        if (hay.includes(tok)) return true;
-        const cleanTok = tok.replace(/[aeiou]/g, '');
-        const cleanHay = hay.replace(/[aeiou]/g, '');
-        return cleanTok.length >= 3 && cleanHay.includes(cleanTok);
-      });
-      const strOk  = !queryStrength || it.strength.includes(queryStrength.toLowerCase());
-      const formOk = !queryForm || it.form === queryForm;
-      return nameOk && strOk && formOk;
-    });
+    function renderMatchCard(item, reqQty, voiceSummary, summaryNotes) {
+    const expStatus = checkExpiryStatus(item.expiry);
+    const watchHit = checkOwnerWatchlist(item);
+    const watchBanner = watchHit
+      ? `<div style="background:#7c2d12; border:1px solid #fb923c; color:#ffedd5; padding:8px; border-radius:6px; margin-bottom:6px; font-size:12px;">
+           🔔 <b>OWNER WATCHLIST ALERT (${watchHit}):</b> Counter staff responsibility — verify protocol before handover.
+         </div>`
+      : "";
 
-    const directWatchHit = checkOwnerWatchlist(queryName, "");
-
-    if (matches.length === 0) {
-      const warnHtml = directWatchHit
-        ? `<div class="alert-watch">⚠️ OWNER WATCHLIST SENSED (${directWatchHit}): ZiGo only informs — Staff must review & act!</div>`
-        : "";
-      return {
-        html: `${warnHtml}<div class="res-fyi">⚠️ Not found in Store Inventory CSV for <b>${queryName} ${queryStrength} ${queryForm}</b>.</div>`,
-        statusSummary: directWatchHit ? `🚨 Watchlist Flagged (${directWatchHit}) + Not in Store CSV` : `⚠️ Not in Store Inventory CSV`
-      };
+    if (expStatus === "EXPIRED") {
+      summaryNotes.push(`🔴 EXPIRED BATCH (${item.batch}) — DO NOT DISPENSE`);
+      return `
+        ${watchBanner}
+        <div class="res-red">
+          <b>⛔ EXPIRED BATCH — DO NOT DISPENSE: ${item.name}</b><br>
+          <span style="font-size:12px;">Batch: <b>${item.batch}</b> | Expired: <b>${item.expiry}</b> | Location: ${item.rack} > ${item.shelf} > ${item.box}</span><br>
+          <span style="font-size:11px; color:#fecaca;">Quarantine this batch immediately. Do not hand over to customer.</span>
+        </div>
+      `;
     }
 
-    let summaryNotes = [];
-    const htmlBlocks = matches.map(item => {
-      const watchHit = checkOwnerWatchlist(item.name, item.saltDisplay) || directWatchHit;
-      const watchBanner = watchHit
-        ? `<div class="alert-watch" style="margin-bottom:8px;">⚠️ OWNER WATCHLIST SENSED (${watchHit}) — ZiGo only informs. Staff must review & decide action!</div>`
-        : "";
+    if (item.qty > 0) {
+      const actualDeduct = Math.min(item.qty, reqQty);
+      pendingHandoverBatch.push({ id: item.id, name: item.name, deductQty: actualDeduct });
+      const afterQty = item.qty - actualDeduct;
+      const shortWarn = reqQty > item.qty ? `<div style="color:#fde68a; font-size:12px; margin-top:4px;">⚠️ Requested ${reqQty}, only ${item.qty} available in stock!</div>` : "";
+      const lowTag = afterQty <= 5 ? `<span class="tag tag-h1">LOW STOCK AFTER HANDOVER (${afterQty})</span>` : "";
 
-      const expStatus = checkExpiryStatus(item.expiry);
-      if (expStatus === "EXPIRED") {
-        voiceSummary.push(`Warning. ${item.name} is expired. Do not dispense.`);
-        summaryNotes.push(`⛔ Expired Batch (${item.expiry}) — Location shown to clear`);
-        return `
-          ${watchBanner}
-          <div class="res-expired">
-            <div style="font-size:15px; font-weight:bold; color:#fca5a5;">⛔ EXPIRED BATCH — DO NOT DISPENSE</div>
-            <div><b>${item.name}</b> | Batch: ${item.batch} | Expired: <b>${item.expiry}</b></div>
-            <div style="font-size:12px; margin-top:4px;">Location to clear: ${item.rack} ➔ ${item.shelf} ➔ ${item.box}</div>
+      // Visual Status Dot: 🔴 Watchlist Alert | 🟡 Low Stock (<=5 after) | 🟢 Healthy Stock
+      const statusDot = watchHit ? "🔴" : (afterQty <= 5 ? "🟡" : "🟢");
+
+      voiceSummary.push(`${item.name}, ${item.rack}, ${item.shelf}, ${item.box}`);
+      summaryNotes.push(
+        watchHit
+          ? `${statusDot} Watchlist Alert (${watchHit}) + Located: ${item.rack} > ${item.shelf} > ${item.box} (Avail: ${item.qty}, Req: ${reqQty}, After: ${afterQty})`
+          : `${statusDot} Located: ${item.rack} > ${item.shelf} > ${item.box} (Avail: ${item.qty}, Req: ${reqQty}, After: ${afterQty})`
+      );
+      return `
+        ${watchBanner}
+        <div class="res-green">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <b>${statusDot} ${item.name} (${item.form})</b>
+            <button class="btn-ghost" style="padding:3px 8px; font-size:11px;" onclick="assignRackQuick(${item.id})">📍 1-Click Assign Rack</button>
           </div>
-        `;
-      }
-
-      if (item.qty > 0) {
-        const actualDeduct = Math.min(item.qty, reqQty);
-        pendingHandoverBatch.push({ id: item.id, name: item.name, deductQty: actualDeduct });
-        const afterQty = item.qty - actualDeduct;
-        const shortWarn = reqQty > item.qty ? `<div style="color:#fde68a; font-size:12px; margin-top:4px;">⚠️ Requested ${reqQty}, only ${item.qty} available in stock!</div>` : "";
-        const lowTag = afterQty <= 5 ? `<span class="tag tag-h1">LOW STOCK AFTER HANDOVER (${afterQty})</span>` : "";
-
-        voiceSummary.push(`${item.name}, ${item.rack}, ${item.shelf}, ${item.box}`);
-        summaryNotes.push(
-          watchHit
-            ? `🚨 Watchlist Alert (${watchHit}) + Located: ${item.rack} > ${item.shelf} > ${item.box} (Stock: ${item.qty}, Req: ${reqQty})`
-            : `✅ Located: ${item.rack} > ${item.shelf} > ${item.box} (Stock: ${item.qty}, Req: ${reqQty})`
-        );
-        return `
-          ${watchBanner}
-          <div class="res-green">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <b>✅ ${item.name} (${item.form})</b>
-              <button class="btn-ghost" style="padding:3px 8px; font-size:11px;" onclick="assignRackQuick(${item.id})">📍 1-Click Assign Rack</button>
-            </div>
-            <div class="loc-box">📍 ${item.rack} ➔ ${item.shelf} ➔ ${item.box}</div>
-            <div style="font-size:12px; color:#a7f3d0;">
-              Available: <b>${item.qty}</b> | Requested: <b>${reqQty}</b> ➔ Left after handover: <b>${afterQty}</b> ${lowTag}
-            </div>
-            ${shortWarn}
-            <div style="font-size:11px; color:#6ee7b7; margin-top:4px;">Exp: ${item.expiry} | Salt: ${item.saltDisplay}</div>
+          <div class="loc-box">📍 ${item.rack} ➔ ${item.shelf} ➔ ${item.box}</div>
+          <div style="font-size:12px; color:#a7f3d0;">
+            Available: <b>${item.qty}</b> | Requested: <b>${reqQty}</b> ➔ Left after handover: <b>${afterQty}</b> ${lowTag}
           </div>
-        `;
-      } else {
-        const alts = inventory.filter(alt =>
-          alt.qty > 0 && alt.salt === item.salt && alt.form === item.form && alt.name !== item.name && checkExpiryStatus(alt.expiry) !== "EXPIRED"
-        );
-        summaryNotes.push(
-          alts.length > 0
-            ? `ℹ️ Out of Stock (Qty: 0) — Only FYI Alternate Shown (${alts.at(0).name})`
-            : `ℹ️ Out of Stock (Qty: 0) — No Same-Salt Alternate`
-        );
-        return `
-          ${watchBanner}
-          <div class="res-fyi">
-            <div><b>❌ ${item.name} — OUT OF STOCK (Qty: 0)</b></div>
-            <div style="margin-top:8px; padding:8px; background:#78350f; border-radius:6px;">
-              <div style="font-size:12px; font-weight:bold; color:#fde68a;">
-                ℹ️ ONLY FYI — Same Composition (${item.saltDisplay} | ${item.form}) Available in Shop:
+          ${shortWarn}
+          <div style="font-size:11px; color:#6ee7b7; margin-top:4px;">Exp: ${item.expiry} | Salt: ${item.saltDisplay}</div>
+        </div>
+      `;
+    } else {
+      const alts = inventory.filter(alt =>
+        alt.qty > 0 && alt.salt === item.salt && alt.form === item.form && alt.name !== item.name && checkExpiryStatus(alt.expiry) !== "EXPIRED"
+      );
+      summaryNotes.push(
+        alts.length > 0
+          ? `🔴 Out of Stock (Avail: 0) — Only FYI Alternate Shown (${alts.at(0).name})`
+          : `🔴 Out of Stock (Avail: 0) — No Same-Salt Alternate`
+      );
+      return `
+        ${watchBanner}
+        <div class="res-fyi">
+          <div><b>🔴 ${item.name} — OUT OF STOCK (Qty: 0)</b></div>
+          <div style="margin-top:8px; padding:8px; background:#78350f; border-radius:6px;">
+            <div style="font-size:12px; font-weight:bold; color:#fde68a;">
+              ℹ️ ONLY FYI — Same Composition (${item.saltDisplay} | ${item.form}) Available in Shop:
+            </div>
+            <div style="font-size:11px; color:#fcd34d; margin-bottom:6px;">
+              (ZiGo does not decide. Inform customer & let customer/chemist decide.)
+            </div>
+            ${alts.length > 0 ? alts.map(a => `
+              <div style="margin-top:4px; font-size:13px;">
+                • 🟢 <b>${a.name}</b> (Qty: ${a.qty}) ➔ <b style="color:#34d399;">${a.rack} | ${a.shelf} | ${a.box}</b>
               </div>
-              <div style="font-size:11px; color:#fcd34d; margin-bottom:6px;">
-                (ZiGo does not decide. Inform customer & let customer/chemist decide.)
-              </div>
-              ${alts.length > 0 ? alts.map(a => `
-                <div style="margin-top:4px; font-size:13px;">
-                  • <b>${a.name}</b> (Qty: ${a.qty}) ➔ <b style="color:#34d399;">${a.rack} | ${a.shelf} | ${a.box}</b>
-                </div>
-              `).join('') : '<div>No same-salt alternative in stock.</div>'}
-            </div>
+            `).join('') : '<div>No same-salt alternative in stock.</div>'}
           </div>
-        `;
-      }
-    });
-
-    return { html: htmlBlocks.join(''), statusSummary: summaryNotes.join(' ; ') };
+        </div>
+      `;
+    }
   }
+
 
   function speakText(msg) {
     if ('speechSynthesis' in window) {
@@ -1005,42 +979,25 @@ Corex DX,Chlorpheniramine Maleate + Codeine,Check Narcotic Rule`;
     };
     rec.start();
   }
-  function logAudit(staffAndMode, meta, items, infoProvided) {
+    function logAudit(staffAndMode, meta, items, infoProvided) {
     const tbody = document.getElementById('auditTableBody');
     const tr = document.createElement('tr');
-    const isAlert = infoProvided.includes('🚨') || infoProvided.includes('⛔');
+    const isRed = infoProvided.includes('🔴') || infoProvided.includes('🚨') || infoProvided.includes('⛔');
+    const isYellow = !isRed && (infoProvided.includes('🟡') || infoProvided.includes('⚠️'));
+    const rowColor = isRed ? '#f87171' : (isYellow ? '#fbbf24' : '#34d399');
+    const leadDot = isRed ? '🔴' : (isYellow ? '🟡' : '🟢');
+    const cleanText = infoProvided.replace(/^[🟢🟡🔴]\s*/, '');
+
     tr.innerHTML = `
       <td>${new Date().toLocaleTimeString()}</td>
       <td><b>${staffAndMode}</b></td>
       <td>${meta}</td>
       <td>${items}</td>
-      <td style="color:${isAlert ? '#f87171' : '#34d399'}; font-weight:bold;">${infoProvided}</td>
+      <td style="color:${rowColor}; font-weight:bold;">${leadDot} ${cleanText}</td>
     `;
     tbody.prepend(tr);
   }
 
-  window.addEventListener('DOMContentLoaded', () => {
-    const savedKey = localStorage.getItem('zigo_gemini_key');
-    if (savedKey && document.getElementById('geminiKeyInput')) {
-      document.getElementById('geminiKeyInput').value = savedKey;
-    }
-    const savedWatch = localStorage.getItem('zigo_owner_watchlist');
-    if (savedWatch) {
-      ownerWatchlist = JSON.parse(savedWatch);
-      document.getElementById('banCount').innerText = `| Owner Watchlist: ${ownerWatchlist.length}`;
-      document.getElementById('bannedStatus').innerText = `✓ Active Watchlist Restored (${ownerWatchlist.length} owner rules)`;
-    }
-    const savedCsv = localStorage.getItem('zigo_saved_csv');
-    if (savedCsv) {
-      const d = JSON.parse(savedCsv);
-      parseCSV(d.text, d.fileName);
-    }
-    const savedLiveInv = localStorage.getItem('zigo_saved_inventory_json');
-    if (savedLiveInv) {
-      inventory = JSON.parse(savedLiveInv);
-      document.getElementById('dbCount').innerText = `Inventory: ${inventory.length}`;
-    }
-  }
     function exportAuditLogCSV() {
     const rows = document.querySelectorAll('#auditTableBody tr');
     if (rows.length === 0) { alert("No audit logs recorded yet to export."); return; }
